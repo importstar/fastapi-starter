@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "app"
+version = "0.1.0"
+description = ""
+authors = ["jakee <jakee.indapanya@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+fastapi = ">=0.115.8,<0.116.0"
+mongoengine = "^0.29.1"
+pydantic = "^2.10.6"
+pydantic-settings = "^2.7.1"
+loguru = "^0.7.3"
+fastapi-pagination = "^0.12.34"
+
+[tool.poetry.group.dev.dependencies]
+uvicorn = "^0.34.0"
+openapi-python-client = "^0.23.1"
+ruff = "^0.9.5"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
