@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRoute
 from fastapi.exceptions import HTTPException, RequestValidationError
 from app.utils import http_error, validation_error
 from contextlib import asynccontextmanager
@@ -26,5 +26,19 @@ def create_app() -> FastAPI:
     @app.get("/health", tags=["health"])
     async def health():
         return {"message": "service is working"}
+
+    def use_route_names_as_operation_ids(app: FastAPI) -> None:
+        """
+        Simplify operation IDs so that generated API clients have simpler function
+        names.
+
+        Should be called only after all routes have been added.
+        """
+        for route in app.routes:
+            if isinstance(route, APIRoute):
+                route.operation_id = route.name 
+
+
+    use_route_names_as_operation_ids(app)
 
     return app
