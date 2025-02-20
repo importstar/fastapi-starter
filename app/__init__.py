@@ -1,8 +1,9 @@
-from fastapi import FastAPI, APIRoute
+from fastapi import FastAPI, APIRouter
 from fastapi.exceptions import HTTPException, RequestValidationError
 from app.utils import http_error, validation_error
 from contextlib import asynccontextmanager
 from app import middlewares, routes
+from loguru import logger
 from app.core.app_settings import AppSettings, get_app_settings
 
 
@@ -25,7 +26,8 @@ def create_app() -> FastAPI:
 
     @app.get("/health", tags=["health"])
     async def health():
-        return {"message": "service is working"}
+        logger.debug("Health check")
+        return {"ok": True}
 
     def use_route_names_as_operation_ids(app: FastAPI) -> None:
         """
@@ -35,9 +37,12 @@ def create_app() -> FastAPI:
         Should be called only after all routes have been added.
         """
         for route in app.routes:
-            if isinstance(route, APIRoute):
+            if isinstance(route, APIRouter):
                 route.operation_id = route.name
 
     use_route_names_as_operation_ids(app)
 
     return app
+
+
+app = create_app()

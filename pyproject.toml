@@ -13,6 +13,7 @@ pydantic = "^2.10.6"
 pydantic-settings = "^2.7.1"
 loguru = "^0.7.3"
 fastapi-pagination = "^0.12.34"
+fastapi-cli = "^0.0.7"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.34.0"
