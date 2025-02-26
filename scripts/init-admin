@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+import sys
+import mongoengine as me
+import datetime
+from app import models
+
+
+def create_admin():
+    print("create admin")
+
+    # address = models.Address(
+    #     address="-",
+    #     building="-",
+    #     floor="-",
+    #     moo="-",
+    #     village="-",
+    #     alley="-",
+    #     road="-",
+    #     subdistrict="-",
+    #     district="-",
+    #     province="-",
+    #     zipcode="-",
+    # )
+    user = models.User(
+        email="admin@example.com",
+        username="admin",
+        title_name="นาย",
+        first_name="admin",
+        last_name="admin",
+        status="active",
+        roles=["user", "admin"],
+    )
+
+    user.password = user.set_password("p@ssw0rd")
+    user.save()
+    print("create admin success")
+
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        me.connect(db="appdb", host=sys.argv[1])
+    else:
+        me.connect(db="appdb")
+    print("start create")
+    create_admin()
+    print("success")

@@ -3,17 +3,25 @@ from fastapi.exceptions import HTTPException, RequestValidationError
 from app.utils import http_error, validation_error
 from contextlib import asynccontextmanager
 from app import middlewares, routes
+from app.models import init_mongoengine
 from loguru import logger
 from app.core.app_settings import AppSettings, get_app_settings
+from dotenv import load_dotenv
+import os
 
 
 def create_app() -> FastAPI:
+    env_file = ".env.dev" if os.getenv("APP_ENV") == "dev" else ".env"
+    load_dotenv(env_file)
+    logger.debug(os.getenv("APP_ENV"))
+
     settings: AppSettings = get_app_settings()
     settings.configure_logging()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         await routes.init_router(app, settings=settings)
+        await init_mongoengine(settings)
         yield
 
     app = FastAPI(**settings.fastapi_kwargs)

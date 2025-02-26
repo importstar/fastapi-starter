@@ -69,11 +69,10 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         case_sensitive=True,
-        env_file=".env.dev"
-        if "dev" == ENV
-        else ".env"
-        if "prod" == ENV
-        else ".env.test",
+        env_file=(
+            ".env.dev" if "dev" == ENV else ".env" if "prod" == ENV else ".env.test"
+        ),
+        env_file_encoding="utf-8",
     )
 
 
