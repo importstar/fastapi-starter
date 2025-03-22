@@ -27,7 +27,7 @@ from fastapi_pagination.ext.mongoengine import paginate
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.post("", response_model=User)
+@router.post("")
 async def create(
     request: Request,
     user: CreateUser,
@@ -35,7 +35,7 @@ async def create(
         models.User, Depends(CurrentUserWithPermission("user:create"))
     ],
     service: t.Annotated[UserService, Depends(UserService)],
-):
+) -> User:
     return service.create(request, user, current_user)
 
 
