@@ -30,6 +30,10 @@ class AppSettings(Settings):
 
         logger.configure(handlers=[{"sink": sys.stderr, "level": self.LOGGING_LEVEL}])
 
+    class Config:
+        env_file = ".env"
+        extra = "allow"
+
 
 @lru_cache
 def get_app_settings() -> AppSettings:

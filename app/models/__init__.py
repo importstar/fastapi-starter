@@ -1,46 +1,65 @@
-from mongoengine import connect, disconnect_all, DEFAULT_CONNECTION_NAME, Document
-from mongoengine.base.common import _get_documents_by_db
-
-from loguru import logger
-
-from .request_log_model import RequestLog
-from .token_model import Token
-
 from .user_model import User
 
-
-__all__ = [
-    "RequestLog",
-    "Token",
-    "User",
-]
-
-
-async def init_mongoengine(settings):
-    host = (
-        settings.DATABASE_URI_FORMAT
-        if settings.DB_USER and settings.DB_PASSWORD
-        else "{db_engine}://{host}:{port}/{database}"
-    ).format(
-        db_engine=settings.DB_ENGINE,
-        user=settings.DB_USER,
-        password=settings.DB_PASSWORD,
-        host=settings.DB_HOST,
-        port=settings.DB_PORT,
-        database=settings.DB_NAME,
-    )
-    logger.info("DB URI: " + host)
-    get_connection = connect(host=host)
-    logger.info("Initialized mongengine")
-
-    return get_connection
+import sys
+from typing import Sequence, Type, TypeVar
+from inspect import getmembers, isclass
+from app.core.app_settings import get_app_settings
+import motor
+import beanie
+from loguru import logger
 
 
-async def disconnect_mongoengine():
-    disconnect_all()
-    logger.info("Closed all mongoengine connections")
+DocumentType = TypeVar("DocumentType", bound=beanie.Document)
 
 
-cls_documents: list[Document] = _get_documents_by_db(
-    DEFAULT_CONNECTION_NAME, DEFAULT_CONNECTION_NAME
-)
+from pydantic_settings import BaseSettings
+
+
+async def gather_documents() -> Sequence[Type[DocumentType]]:
+    """Returns a list of all MongoDB document models defined in `models` module."""
+
+    class_models = getmembers(sys.modules[__name__], isclass)
+
+    for key in [k for k in sys.modules if __name__ in k]:
+        class_models.extend(getmembers(sys.modules[key], isclass))
+
+    class_models = list(set(class_models))
+
+    return [
+        doc
+        for _, doc in class_models
+        if issubclass(doc, beanie.Document) and doc.__name__ != "Document"
+    ]
+
+
+class BeanieClient:
+    async def init_beanie(self, settings):
+        self.settings = settings
+        logger.debug(settings.DATABASE_URI)
+        self.client = motor.motor_asyncio.AsyncIOMotorClient(
+            settings.DATABASE_URI, connect=True
+        )
+
+        documents = await gather_documents()
+        print("Documents >>>")
+        for document in documents:
+            print(document)
+        print(self.client.get_default_database())
+        await beanie.init_beanie(
+            database=self.client.get_default_database(),
+            document_models=documents,
+            # recreate_views=True,
+        )
+
+
+async def init_beanie(app, settings):
+    await beanie_client.init_beanie(settings)
+
+
+async def init_default_beanie_client():
+    settings = get_app_settings()
+    print("setings>>>", settings)
+    await beanie_client.init_beanie(settings)
+
+
+beanie_client = BeanieClient()

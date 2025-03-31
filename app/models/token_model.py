@@ -1,10 +1,18 @@
-import mongoengine as me
+from beanie import Document, PydanticObjectId
+from datetime import datetime
+from pydantic import Field
+
+from dhara import schemas
 
 
-class Token(me.Document):
-    meta = {"collection": "tokens"}
-    owner = me.ReferenceField("User", dbref=True, required=True, unique=True)
-    access_token = me.StringField()
-    refresh_token = me.StringField()
-    access_token_expires = me.DateTimeField(required=True)
-    refresh_token_expires = me.DateTimeField(required=True)
+class ApiToken(schemas.tokens.ApiToken, Document):
+    id: PydanticObjectId = Field(
+        default_factory=PydanticObjectId,
+        alias="_id",
+    )
+
+    created_date: datetime | None = Field(default_factory=datetime.utcnow)
+    updated_date: datetime | None = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "api_tokens"

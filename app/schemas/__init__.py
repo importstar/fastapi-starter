@@ -1,3 +1,11 @@
-from .base_schema import *
-from .auth_schema import *
-from .user_schema import *
+from .base_schema import BaseSchema, GeoObject
+from .user_schema import (
+    User,
+    UserList,
+    FindUser,
+    Token,
+    RegisteredUser,
+    ChangedPassword,
+    UpdatedUser,
+    TokenData,
+)

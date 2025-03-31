@@ -1,55 +1,49 @@
-import typing as t
-
-from pydantic import BaseModel
-
+from typing import Any, Union, Type
+from beanie import Document
 from bson import ObjectId
 
-from mongoengine import Document, QuerySet, EmbeddedDocument
-
-from app.repositories import BaseRepository
+from app.repositories import BaseRepository  # Assuming this is also updated for Beanie
 
 
 class BaseService:
     def __init__(self, repository: BaseRepository):
         self._repository: BaseRepository = repository
 
-    def get_list(
+    async def get_list(
         self,
-        schema: BaseModel | None = None,
-        **kwargs: t.Any,
-    ) -> QuerySet:
-        return self._repository.get_by_options(schema, **kwargs)
+        schema: Type[Document] = None,
+        **kwargs: Any,
+    ) -> list[Document]:
+        return await self._repository.get_by_options(schema, **kwargs)
 
-    def get_by_id(self, id: str | ObjectId) -> Document:
-        return self._repository.get_by_id(id)
+    async def get_by_id(self, id: Union[str, ObjectId]) -> Document:
+        return await self._repository.get_by_id(id)
 
-    def create(
+    async def create(
         self,
-        schema: BaseModel | None = None,
-        **kwargs: t.Any,
+        schema: Type[Document] = None,
+        **kwargs: Any,
     ) -> Document:
-        return self._repository.create(schema, **kwargs)
+        return await self._repository.create(schema, **kwargs)
 
-    def patch(
+    async def patch(
         self,
-        id: str | ObjectId,
-        schema: BaseModel | None = None,
-        **kwargs: t.Any,
+        id: Union[str, ObjectId],
+        schema: Type[Document] = None,
+        **kwargs: Any,
     ) -> Document:
-        return self._repository.update(id, schema, **kwargs)
+        return await self._repository.update(id, schema, **kwargs)
 
-    def patch_attr(self, id: str | ObjectId, attr: str, value: t.Any) -> Document:
-        return self._repository.update_attr(id, attr, value)
-
-    def delete_by_id(self, id: str | ObjectId) -> Document:
-        return self._repository.delete_by_id(id)
-
-    def disactive_by_id(self, id: str | ObjectId) -> Document:
-        return self._repository.disactive_by_id(id)
-
-    def update_request_logs(
+    async def patch_attr(
         self,
-        id: str | ObjectId,
-        request_log: EmbeddedDocument,
+        id: Union[str, ObjectId],
+        attr: str,
+        value: Any,
     ) -> Document:
-        return self._repository.update_request_logs(id, request_log)
+        return await self._repository.update_attr(id, attr, value)
+
+    async def delete_by_id(self, id: Union[str, ObjectId]) -> Document:
+        return await self._repository.delete_by_id(id)
+
+    async def disactive_by_id(self, id: Union[str, ObjectId]) -> Document:
+        return await self._repository.disactive_by_id(id)

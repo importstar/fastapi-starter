@@ -3,7 +3,7 @@ from fastapi.exceptions import HTTPException, RequestValidationError
 from .utils import http_error, validation_error
 from contextlib import asynccontextmanager
 from . import middlewares, routers
-from .models import init_mongoengine
+from .models import init_beanie
 from loguru import logger
 from .core.app_settings import AppSettings, get_app_settings
 from dotenv import load_dotenv
@@ -18,13 +18,7 @@ def create_app() -> FastAPI:
     settings: AppSettings = get_app_settings()
     settings.configure_logging()
 
-    @asynccontextmanager
-    async def lifespan(app: FastAPI):
-        await routers.init_router(app, settings=settings)
-        await init_mongoengine(settings)
-        yield
-
-    app = FastAPI(**settings.fastapi_kwargs)
+    app = FastAPI(lifespan=lifespan, **settings.fastapi_kwargs)
     app.add_exception_handler(HTTPException, http_error.http_error_handler)
     app.add_exception_handler(
         RequestValidationError, validation_error.http422_error_handler
@@ -53,3 +47,9 @@ def create_app() -> FastAPI:
     return app
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    settings: AppSettings = get_app_settings()
+    await routers.init_router(app, settings=settings)
+    await init_beanie(app, settings)
+    yield

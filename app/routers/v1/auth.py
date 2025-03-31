@@ -1,70 +1,94 @@
-import typing as t
-
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.security import (
+    HTTPAuthorizationCredentials,
+    HTTPBasicCredentials,
+    HTTPBearer,
     OAuth2PasswordRequestForm,
 )
 
-from app import models
-from app.utils.dependencies import get_current_active_user
-from app.schemas.user_schema import LoginUserResponse
-from app.services.auth_service import AuthService
-from app.schemas.auth_schema import (
-    SignIn,
-    SignInResponse,
-    # SignUp,
-    AccessTokenResponse,
-    RefreshToken,
+import typing
+
+from app.core import security, dependencies
+from app.core.config import settings
+from app import models, schemas
+import datetime
+
+router = APIRouter(prefix="/auth", tags=["authentication"])
+
+
+@router.post(
+    "/token",
+    summary="Get OAuth2 access token",
 )
-from loguru import logger
-
-
-router = APIRouter(prefix="/auth", tags=["auth"])
+async def login_for_access_token(
+    form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()],
+) -> schemas.Token:
+    user = await models.User.find_one(models.User.username == form_data.username)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = datetime.timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+    access_token = security.create_access_token(
+        data={"sub": str(user.id)}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.post(
     "/login",
 )
 async def authentication(
-    auth_service: t.Annotated[AuthService, Depends(AuthService)],
-    form_data: t.Annotated[
-        OAuth2PasswordRequestForm, Depends(OAuth2PasswordRequestForm)
-    ],
+    form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()],
     name="auth:login",
-) -> SignInResponse:
-    logger.debug("in login route")
-    login_info = SignIn(username=form_data.username, password=form_data.password)
-    auth_service_login = auth_service.login(login_info)
+) -> schemas.Token:
+    user = await models.User.find_one(models.User.username == form_data.username)
 
-    return auth_service_login
+    if not user:
+        user = await models.User.find_one(models.User.email == form_data.username)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+        )
+
+    if not await user.verify_password(form_data.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+        )
+
+    user.last_login_date = datetime.datetime.now()
+    await user.save()
+    access_token_expires = datetime.timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+    return schemas.Token(
+        access_token=security.create_access_token(
+            data={"sub": str(user.id)}, expires_delta=access_token_expires
+        ),
+        refresh_token=security.create_refresh_token(
+            data={"sub": str(user.id)}, expires_delta=access_token_expires
+        ),
+        token_type="Bearer",
+        scope="",
+        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        expires_at=datetime.datetime.now() + access_token_expires,
+        issued_at=user.last_login_date,
+    )
 
 
-@router.post("/sign-in", response_model=SignInResponse)
-async def sign_in(
-    user_info: SignIn, auth_service: t.Annotated[AuthService, Depends(AuthService)]
-):
-    return auth_service.sign_in(user_info)
-
-
-# @router.post("/sign-up", response_model=User)
-# async def sign_up(
-#     user_info: SignUp,
-#     current_user: models.User = Depends(get_current_active_user),
-#     auth_service: AuthService = Depends(AuthService),
-# ):
-#     return auth_service.sign_up(user_info, current_user)
-
-
-@router.get("/me", response_model=LoginUserResponse)
-async def get_me(
-    current_user: t.Annotated[models.User, Depends(get_current_active_user)]
-):
-    return current_user
-
-
-@router.post("/refresh_token", response_model=AccessTokenResponse)
+@router.get("/refresh_token")
 async def refresh_token(
-    refresh_token: RefreshToken,
-    auth_service: t.Annotated[AuthService, Depends(AuthService)],
+    credentials: typing.Annotated[HTTPAuthorizationCredentials, Security(HTTPBearer())],
 ):
-    return auth_service.get_refresh_token(refresh_token)
+    refresh_token = credentials.credentials
+
+    jwt_handler = get_jwt_handler()
+    new_token = jwt_handler.refresh_token(refresh_token)
+    return {"access_token": new_token}
