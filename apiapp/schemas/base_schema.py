@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
 
-from app.utils.schema import PydanticObjectId
+from ..utils.schema import PydanticObjectId
 
 
 class BaseSchema(BaseModel):

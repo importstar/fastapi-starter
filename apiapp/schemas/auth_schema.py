@@ -4,9 +4,9 @@ import typing as t
 
 from pydantic import Field
 
-from app.schemas.user_schema import LoginUserResponse
-from app.schemas import BaseSchema
-from app.utils.schema import PydanticObjectId
+from ..utils.schema import PydanticObjectId
+from ..schemas import BaseSchema
+from ..schemas.user_schema import LoginUserResponse
 
 
 class TokenResponse(BaseSchema):

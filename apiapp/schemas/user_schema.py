@@ -2,7 +2,7 @@ import datetime
 
 import typing as t
 from pydantic import Field
-from app.schemas.base_schema import BaseSchema, FindBase, BaseSchemaId, SearchOptions
+from ..schemas.base_schema import BaseSchema, FindBase, BaseSchemaId, SearchOptions
 
 
 class BaseUser(BaseSchema):

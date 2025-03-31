@@ -2,23 +2,23 @@ from fastapi import (
     Request,
 )
 
-from app.core.security import get_password_hash, verify_password
-from app.core.exceptions import AuthError
-from app.schemas import (
+from ..api.core.security import get_password_hash, verify_password
+from ..api.core.exceptions import AuthError
+from ..schemas import (
     ChangeUserPassword,
     ResetPassword,
     CreateUser,
     UpdateUser,
 )
-from app.repositories import UserRepository
-from app.core.exceptions import ValidationError, NotFoundError
+from ..repositories import UserRepository
+from ..api.core.exceptions import ValidationError, NotFoundError
 
-from app import models
-from app.services import BaseService
+from .. import models
+from ..services import BaseService
 
-from app.schemas.user_schema import FindUser
+from ..schemas.user_schema import FindUser
 
-from app.utils import request_logs as rl
+from ..utils import request_logs as rl
 from bson import ObjectId
 
 

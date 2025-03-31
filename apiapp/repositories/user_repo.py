@@ -5,9 +5,9 @@ from calendar import timegm
 from bson import ObjectId
 from mongoengine import Document, errors
 
-from app.models import User, Token
-from app.repositories.base_repo import BaseRepository
-from app.core.exceptions import DuplicatedError, ValidationError
+from ..models import User, Token
+from ..repositories.base_repo import BaseRepository
+from ..api.core.exceptions import DuplicatedError, ValidationError
 
 from loguru import logger
 

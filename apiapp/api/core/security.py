@@ -11,9 +11,9 @@ from fastapi.security import (
 )
 from loguru import logger
 
-from app.core.config import settings
-from app.core.exceptions import AuthError
-from app.repositories.user_repo import UserRepository
+from ..core.config import settings
+from ..core.exceptions import AuthError
+from ...repositories.user_repo import UserRepository
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 ALGORITHM = ("HS256", "A256KW")

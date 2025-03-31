@@ -1,13 +1,18 @@
+
+import os
+
 from fastapi import FastAPI, APIRouter
 from fastapi.exceptions import HTTPException, RequestValidationError
-from .utils import http_error, validation_error
-from contextlib import asynccontextmanager
-from . import middlewares, routers
-from .models import init_mongoengine
 from loguru import logger
-from .core.app_settings import AppSettings, get_app_settings
+from contextlib import asynccontextmanager
+
 from dotenv import load_dotenv
-import os
+
+
+from . import middlewares, routers
+from .utils import http_error, validation_error
+from .core.app_settings import AppSettings, get_app_settings
+from ..models import init_mongoengine
 
 
 def create_app() -> FastAPI:

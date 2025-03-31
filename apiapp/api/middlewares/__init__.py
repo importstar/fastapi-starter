@@ -1,14 +1,13 @@
 import time
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from app.core.app_settings import AppSettings
 from fastapi.responses import JSONResponse
-from starlette.responses import Response
 from starlette import status
 from loguru import logger
 
+from ..core.app_settings import AppSettings
 
 def init_middleware(app: FastAPI, settings: AppSettings) -> None:
     app.add_middleware(

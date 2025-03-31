@@ -6,7 +6,7 @@ from bson import ObjectId
 
 from mongoengine import Document, QuerySet, EmbeddedDocument
 
-from app.repositories import BaseRepository
+from ..repositories import BaseRepository
 
 
 class BaseService:

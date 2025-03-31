@@ -9,7 +9,7 @@ from bson import ObjectId
 from mongoengine import Document, QuerySet, EmbeddedDocument
 from mongoengine.errors import NotUniqueError
 
-from app.core.exceptions import DuplicatedError, ValidationError
+from ..api.core.exceptions import DuplicatedError, ValidationError
 
 
 class BaseRepository:

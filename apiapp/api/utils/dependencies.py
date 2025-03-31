@@ -3,12 +3,13 @@ from fastapi import Depends
 from pydantic import ValidationError
 from loguru import logger
 
-from app.core.exceptions import AuthError, NoPermission
-from app.core.security import JWTBearer, reusable_oauth2, decode_jwt
+from ..core.exceptions import AuthError, NoPermission
+from ..core.security import JWTBearer, reusable_oauth2, decode_jwt
 
-from app import models
-from app.services.user_service import UserService
-from app.schemas.auth_schema import Payload
+
+from apiapp import models
+from apiapp.services.user_service import UserService
+from apiapp.schemas.auth_schema import Payload
 
 
 def get_current_user(token: t.Annotated[str, Depends(reusable_oauth2)]) -> models.User:

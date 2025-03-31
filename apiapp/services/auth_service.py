@@ -2,25 +2,25 @@ import datetime
 import typing as t
 from loguru import logger
 
-from app.core.config import settings
-from app.core.exceptions import AuthError
-from app.core.security import (
+from ..api.core.config import settings
+from ..api.core.exceptions import AuthError
+from ..api.core.security import (
     create_access_token,
     create_refresh_token,
     verify_password,
     decode_jwt,
 )
 
-from app import models
-from app.repositories import UserRepository
-from app.schemas import (
+from .. import models
+from ..repositories import UserRepository
+from ..schemas import (
     Payload,
     SignIn,
     SignInResponse,
     AccessTokenResponse,
     RefreshToken,
 )
-from app.services.base_service import BaseService
+from ..services.base_service import BaseService
 
 
 class AuthService(BaseService):

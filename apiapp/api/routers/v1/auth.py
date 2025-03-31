@@ -5,11 +5,12 @@ from fastapi.security import (
     OAuth2PasswordRequestForm,
 )
 
-from app import models
-from app.utils.dependencies import get_current_active_user
-from app.schemas.user_schema import LoginUserResponse
-from app.services.auth_service import AuthService
-from app.schemas.auth_schema import (
+from ...utils.dependencies import get_current_active_user
+
+from .... import models
+from ....schemas.user_schema import LoginUserResponse
+from ....services.auth_service import AuthService
+from ....schemas.auth_schema import (
     SignIn,
     SignInResponse,
     # SignUp,

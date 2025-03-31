@@ -11,8 +11,8 @@ from pydantic.main import _model_construction
 from mongoengine import Document, ImageGridFsProxy, GridFSProxy
 from mongoengine.base.metaclasses import TopLevelDocumentMetaclass
 
-from app.models import cls_documents
-from app.core.exceptions import ValidationError
+from ..models import cls_documents
+from ..api.core.exceptions import ValidationError
 
 __all__ = ("AllOptional", "PydanticObjectId", "DeDBRef")
 

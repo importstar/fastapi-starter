@@ -1,12 +1,13 @@
 import logging
 import sys
+
 from typing import Any, Dict
 from functools import lru_cache
 
 from loguru import logger
 
-from app.utils.logging import InterceptHandler
-from app.core.config import Settings
+from .config import Settings
+from ...utils.logging import InterceptHandler
 
 
 class AppSettings(Settings):

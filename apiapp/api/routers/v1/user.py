@@ -3,12 +3,12 @@ import typing as t
 from fastapi import APIRouter, Depends
 
 
-from app import models
-from app.utils.dependencies import get_current_active_user, CurrentUserWithPermission
+from apiapp import models
+from apiapp.api.utils.dependencies import get_current_active_user, CurrentUserWithPermission
 
 # from api.core.exceptions import AuthError
-from app.services.user_service import UserService
-from app.schemas.user_schema import (
+from apiapp.services.user_service import UserService
+from apiapp.schemas.user_schema import (
     CreateUser,
     User,
     FindUser,
