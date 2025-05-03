@@ -31,32 +31,30 @@ class AuthService(BaseService):
     def login(self, sign_in_info: SignIn) -> SignInResponse:
         user: models.User = self._repository.get_by_options(
             username=sign_in_info.username
-        )
+        ).first()
         logger.debug("login")
-        logger.debug(user)
         logger.debug(sign_in_info.username)
 
-        if len(user) < 1:
+        if not user:
             raise AuthError(detail="Incorrect username or password")
 
-        found_user: models.User = user[0]
-        if found_user.status != "active":
+        if user.status != "active":
             raise AuthError(detail="Account is not active")
 
-        if not found_user.verify_password(sign_in_info.password):
+        if not user.verify_password(sign_in_info.password):
             raise AuthError(detail="Incorrect username or password")
 
-        found_user = self._repository.update_attr(
-            found_user.id, attr="last_login_date", value=datetime.datetime.now()
+        user = self._repository.update_attr(
+            user.id, attr="last_login_date", value=datetime.datetime.now()
         )
-        delattr(found_user, "password")
+        delattr(user, "password")
 
-        payload = Payload(**found_user.to_mongo())
+        payload = Payload(**user.to_mongo())
         token = self.generate_user_token(payload)
-        self._repository.create_or_update_token(found_user, token)
+        self._repository.create_or_update_token(user, token)
         access_token_expires_in = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
         return SignInResponse(
-            user_info=found_user,
+            user_info=user,
             access_token_expires_in=access_token_expires_in,
             **token
         )
@@ -64,52 +62,50 @@ class AuthService(BaseService):
     def sign_in(self, sign_in_info: SignIn) -> SignInResponse:
         user: models.User = self._repository.get_by_options(
             username=sign_in_info.username
-        )
+        ).first()
         logger.debug("sign_in")
         logger.debug(user)
 
-        if len(user) < 1:
+        if not user:
             raise AuthError(detail="Incorrect username or password")
 
-        found_user: models.User = user[0]
-        if found_user.status != "active":
+        if user.status != "active":
             raise AuthError(detail="Account is not active")
 
-        if not verify_password(sign_in_info.password, found_user.password):
+        if not verify_password(sign_in_info.password, user.password):
             raise AuthError(detail="Incorrect username or password")
 
-        found_user = self._repository.update_attr(
-            found_user.id, attr="last_login_date", value=datetime.datetime.now()
+        user = self._repository.update_attr(
+            user.id, attr="last_login_date", value=datetime.datetime.now()
         )
-        delattr(found_user, "password")
+        delattr(user, "password")
 
-        payload = Payload(**found_user.to_mongo())
+        payload = Payload(**user.to_mongo())
         token = self._repository.update_token(
-            found_user, self.generate_user_token(payload)
+            user, self.generate_user_token(payload)
         )
-        return SignInResponse(user_info=found_user, **token.to_mongo())
+        return SignInResponse(user_info=user, **token.to_mongo())
 
     def revoke_longlife_token(self, user_id: str) -> SignInResponse:
-        user: models.User = self._repository.get_by_options(id=user_id)
+        user: models.User = self._repository.get_by_options(id=user_id).firt()
 
-        if len(user) < 1:
+        if not user:
             raise AuthError(detail="Incorrect username or password")
 
-        found_user: models.User = user[0]
-        if found_user.status != "active":
+        if user.status != "active":
             raise AuthError(detail="Account is not active")
 
-        found_user = self._repository.update_attr(
-            found_user.id, attr="last_login_date", value=datetime.datetime.now()
+        user = self._repository.update_attr(
+            user.id, attr="last_login_date", value=datetime.datetime.now()
         )
-        delattr(found_user, "password")
+        delattr(user, "password")
 
-        payload = Payload(**found_user.to_mongo())
+        payload = Payload(**user.to_mongo())
         token = self.generate_longlife_user_token(payload)
-        self._repository.create_or_update_token(found_user, token)
+        self._repository.create_or_update_token(user, token)
         access_token_expires_in = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 30 * 24 * 60
         return SignInResponse(
-            user_info=found_user,
+            user_info=user,
             access_token_expires_in=access_token_expires_in,
             **token
         )
