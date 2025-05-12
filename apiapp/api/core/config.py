@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 30 * 24 * 60  # 30 days
     OTP_INTERVAL: int = 30
 
-    API_PREFIX: str = "/api"
+    API_PREFIX: str = ""
 
     # CORS
     ALLOW_CREDENTIALS: bool = True
