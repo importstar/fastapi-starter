@@ -51,7 +51,7 @@ class BeanieClient:
         )
 
 
-async def init_beanie(app, settings):
+async def init_beanie(settings):
     await beanie_client.init_beanie(settings)
 
 
