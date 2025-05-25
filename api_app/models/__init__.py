@@ -11,9 +11,6 @@ from loguru import logger
 DocumentType = TypeVar("DocumentType", bound=beanie.Document)
 
 
-from pydantic_settings import BaseSettings
-
-
 async def gather_documents() -> Sequence[Type[DocumentType]]:
     """Returns a list of all MongoDB document models defined in `models` module."""
 
