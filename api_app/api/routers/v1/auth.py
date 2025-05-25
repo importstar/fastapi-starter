@@ -10,7 +10,7 @@ import typing
 
 from ...core import security, dependencies
 from ...core.config import settings
-from apiapp import models, schemas
+from api_app import models, schemas
 import datetime
 
 router = APIRouter(prefix="/auth", tags=["authentication"])

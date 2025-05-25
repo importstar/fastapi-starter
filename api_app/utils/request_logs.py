@@ -1,4 +1,4 @@
-from apiapp import models
+from api_app import models
 
 
 def create_logs(action, request, current_user):

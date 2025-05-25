@@ -3,7 +3,7 @@ from beanie import Document
 
 from .. import models, schemas
 from .base_repo import BaseRepository
-from apiapp.api.core.exceptions import ValidationError
+from api_app.api.core.exceptions import ValidationError
 
 from loguru import logger
 

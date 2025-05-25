@@ -3,7 +3,7 @@ from fastapi.exceptions import HTTPException, RequestValidationError
 from .utils import http_error, validation_error
 from contextlib import asynccontextmanager
 from . import middlewares, routers
-from apiapp.models import init_beanie
+from api_app.models import init_beanie
 from loguru import logger
 from .core.app_settings import AppSettings, get_app_settings
 from dotenv import load_dotenv

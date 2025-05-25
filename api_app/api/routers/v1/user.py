@@ -1,7 +1,7 @@
 import typing as t
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from apiapp import schemas, models
-from apiapp.services import UserService
+from api_app import schemas, models
+from api_app.services import UserService
 from ...core import dependencies
 from loguru import logger
 from beanie.operators import Set

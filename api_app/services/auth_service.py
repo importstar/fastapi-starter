@@ -2,9 +2,9 @@ import datetime
 import typing as t
 from loguru import logger
 
-from apiapp.api.core.config import settings
-from apiapp.api.core.exceptions import AuthError
-from apiapp.api.core.security import (
+from api_app.api.core.config import settings
+from api_app.api.core.exceptions import AuthError
+from api_app.api.core.security import (
     create_access_token,
     create_refresh_token,
     verify_password,

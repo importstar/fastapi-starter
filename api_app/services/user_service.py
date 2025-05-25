@@ -2,10 +2,10 @@ from fastapi import (
     Request,
 )
 
-from apiapp.api.core.security import get_password_hash, verify_password
-from apiapp.api.core.exceptions import AuthError
+from api_app.api.core.security import get_password_hash, verify_password
+from api_app.api.core.exceptions import AuthError
 from ..repositories import UserRepository
-from apiapp.api.core.exceptions import ValidationError, NotFoundError
+from api_app.api.core.exceptions import ValidationError, NotFoundError
 
 from .. import models, schemas
 from ..services import BaseService
