@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from api_app import schemas, models
 from api_app.services import UserService
 from ...core import dependencies
-from loguru import logger
 from beanie.operators import Set
 from beanie import PydanticObjectId
 import datetime
@@ -46,7 +45,7 @@ async def get_all(
 
 
 @router.post(
-    "/create",
+    "",
     # response_model=schemas.User,
     response_model_by_alias=False,
 )
@@ -68,7 +67,7 @@ async def create(
     return user
 
 
-@router.put(
+@router.patch(
     "/{user_id}/change_password",
     response_model=schemas.User,
     response_model_by_alias=False,
@@ -96,7 +95,7 @@ def change_password(
     return user
 
 
-@router.put(
+@router.patch(
     "/{user_id}/update",
     response_model=schemas.User,
     response_model_by_alias=False,
@@ -120,17 +119,14 @@ def update(
     user.update(**set_dict)
 
     user.reload()
-    # request_log = deps.create_logs(
-    #     action="update", request=request, current_user=current_user
-    # )
-    # user.request_logs.append(request_log)
+
     if user.citizen_id:
         user.citizen_id = user.citizen_id.replace("-", "")
     user.save()
     return user
 
 
-@router.put(
+@router.patch(
     "/{user_id}/set_status",
     response_model=schemas.User,
     response_model_by_alias=False,
@@ -159,7 +155,7 @@ async def set_status(
     return user
 
 
-@router.put(
+@router.patch(
     "/{user_id}/set_role",
 )
 async def set_role(
