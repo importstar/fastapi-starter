@@ -33,7 +33,7 @@ async def login_for_access_token(
     access_token_expires = datetime.timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
-    access_token = security.create_access_token(
+    access_token = security.jwt_handler.create_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
@@ -69,11 +69,13 @@ async def authentication(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
     return schemas.Token(
-        access_token=security.create_access_token(
-            data={"sub": str(user.id)}, expires_delta=access_token_expires
+        access_token=security.jwt_handler.create_access_token(
+            data={"sub": str(user.id), "token_type": "access"},
+            expires_delta=access_token_expires,
         ),
-        refresh_token=security.create_refresh_token(
-            data={"sub": str(user.id)}, expires_delta=access_token_expires
+        refresh_token=security.jwt_handler.create_refresh_token(
+            data={"sub": str(user.id), "token_type": "refresh"},
+            expires_delta=access_token_expires,
         ),
         token_type="Bearer",
         scope="",
@@ -87,8 +89,15 @@ async def authentication(
 async def refresh_token(
     credentials: typing.Annotated[HTTPAuthorizationCredentials, Security(HTTPBearer())],
 ):
-    refresh_token = credentials.credentials
+    refresh_token_str = credentials.credentials
 
-    jwt_handler = get_jwt_handler()
-    new_token = jwt_handler.refresh_token(refresh_token)
-    return {"access_token": new_token}
+    try:
+        new_access_token = security.jwt_handler.refresh_token(refresh_token_str)
+        return {"access_token": new_access_token, "token_type": "bearer"}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Exception in: {e}",
+        )

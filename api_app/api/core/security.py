@@ -1,11 +1,12 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import bcrypt
 import json
 
 from jwcrypto import jwk
 from jose import jwt
+from jose.exceptions import JWTError
 
-from fastapi import Request
+from fastapi import Request, HTTPException, status
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBearer,
@@ -23,30 +24,93 @@ ALGORITHM = "HS256"
 # JWE_HEADER = {"alg": ALGORITHM[1], "enc": "A256CBC-HS512"}
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now() + expires_delta
-    else:
-        expire = datetime.now() + timedelta(
+class JWTHandler:
+    def __init__(self, secret_key: str, algorithm: str):
+        self.secret_key = secret_key
+        self.algorithm = algorithm
+
+    def create_access_token(self, data: dict, expires_delta: timedelta | None = None):
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.now(timezone.utc) + expires_delta
+        else:
+            expire = datetime.now(timezone.utc) + timedelta(
+                minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+            )
+        to_encode.update({"exp": expire})
+        encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
+        return encoded_jwt
+
+    def create_refresh_token(
+        self, data: dict, expires_delta: timedelta | None = None
+    ) -> str:
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.now(timezone.utc) + expires_delta
+        else:
+            expire = datetime.now(timezone.utc) + timedelta(
+                minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES
+            )
+        to_encode.update({"exp": expire})
+        encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
+        return encoded_jwt
+
+    def decode_token(self, token: str, token_type: str | None = None) -> dict:
+        try:
+            decoded_payload = jwt.decode(
+                token, self.secret_key, algorithms=[self.algorithm]
+            )
+
+            if token_type and decoded_payload.get("token_type") != token_type:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"Token type incorrect: expected '{token_type}' but got '{decoded_payload.get('token_type')}'",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+
+            return decoded_payload
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Token Expired",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        except JWTError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token Invalid",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Decode Error Token: {e}",
+            )
+
+    def refresh_token(self, refresh_token_str: str) -> str:
+        try:
+            payload = self.decode_token(refresh_token_str, token_type="refresh")
+        except HTTPException as e:
+            raise e
+
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No sub in Refresh Token",
+            )
+
+        new_access_token_expires = timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
-def create_refresh_token(data: dict, expires_delta: timedelta | None = None) -> str:
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now() + expires_delta
-    else:
-        expire = datetime.now() + timedelta(
-            minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES
+        new_access_token = self.create_access_token(
+            data={"sub": user_id, "token_type": "access"},
+            expires_delta=new_access_token_expires,
         )
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+        return new_access_token
+
+
+jwt_handler = JWTHandler(settings.SECRET_KEY, ALGORITHM)
 
 
 # def get_jwt_key():

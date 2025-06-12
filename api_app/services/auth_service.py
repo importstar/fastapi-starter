@@ -5,8 +5,7 @@ from loguru import logger
 from api_app.api.core.config import settings
 from api_app.api.core.exceptions import AuthError
 from api_app.api.core.security import (
-    create_access_token,
-    create_refresh_token,
+    jwt_handler,
     verify_password,
     decode_jwt,
 )
@@ -137,10 +136,10 @@ class AuthService(BaseService):
         refresh_token_lifespan = datetime.timedelta(
             minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES
         )
-        access_token, access_token_expires = create_access_token(
+        access_token, access_token_expires = jwt_handler.create_access_token(
             payload.model_dump(), access_token_lifespan
         )
-        refresh_token, refresh_token_expires = create_refresh_token(
+        refresh_token, refresh_token_expires = jwt_handler.create_refresh_token(
             payload.model_dump(), refresh_token_lifespan
         )
         access_refresh_token = {
@@ -183,10 +182,10 @@ class AuthService(BaseService):
         refresh_token_lifespan = datetime.timedelta(
             minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES * 30 * 24
         )
-        access_token, access_token_expires = create_access_token(
+        access_token, access_token_expires = jwt_handler.create_access_token(
             payload.model_dump(), access_token_lifespan
         )
-        refresh_token, refresh_token_expires = create_refresh_token(
+        refresh_token, refresh_token_expires = jwt_handler.create_refresh_token(
             payload.model_dump(), refresh_token_lifespan
         )
         access_refresh_token = {
