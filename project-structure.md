@@ -46,8 +46,11 @@ project/
     │
     │
     ├── middlewares/          # 🆕 FastAPI middlewares
-    │   ├── __init__.py
-    │   └── cors.py           # CORS middleware (ย้ายมาจาก api/middlewares/)
+    │   ├── __init__.py       # Clean exports only
+    │   ├── base.py           # init_all_middlewares function
+    │   ├── cors.py           # CORS middleware (ย้ายมาจาก api/middlewares/)
+    │   ├── security.py       # Security middleware (User agent filtering)
+    │   └── timing.py         # Performance timing middleware
     │
     └── modules/              # 🆕 Feature modules
         ├── __init__.py
