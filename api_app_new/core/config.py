@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     # base
     APP_ENV: str = ENV
     DEBUG: bool = False
+    REDIRECT_SLASHES: bool = True
     DOCS_URL: str = "/docs"
     OPENAPI_PREFIX: str = ""
     OPENAPI_URL: str = "/openapi.json"
