@@ -46,13 +46,13 @@ def create_app() -> FastAPI:
 async def lifespan(app: FastAPI):
     settings = get_settings()
     await init_beanie(settings)  # เปิด comment นี้ด้วย
-    init_routers(app)
-    await use_route_names_as_operation_ids(app)
+    init_routers(app, settings)
+    use_route_names_as_operation_ids(app)
     add_pagination(app)
     yield
 
 
-async def use_route_names_as_operation_ids(app: FastAPI) -> None:
+def use_route_names_as_operation_ids(app: FastAPI) -> None:
     """
     Simplify operation IDs so that generated API clients have simpler function
     names.
