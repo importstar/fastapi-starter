@@ -1,21 +1,27 @@
 import importlib
 import pkgutil
+
 # from pathlib import Path
 from typing import List
-from fastapi import APIRouter
+from fastapi import APIRouter, FastAPI
 from loguru import logger
+
+from api_app.api.core.config import Settings
 
 
 class Routers:
-    def __init__(self, app):
+    def __init__(self, app: FastAPI, settings: Settings):
         self.app = app
+        self.settings = settings
 
-    def include_router(self, router):
-        self.app.include_router(router)
+    def _include_router(self, router):
+        self.app.include_router(
+            router, prefix=f"{self.settings.API_PREFIX}", tags=router.tags
+        )
 
     def include_routers(self, routers):
         for router in routers:
-            self.include_router(router)
+            self._include_router(router)
 
     def discover_and_include_routers(self):
         """Discover and include all routers from modules/*/router.py"""
@@ -83,8 +89,8 @@ class Routers:
         return routers
 
 
-def init_routers(app):
+def init_routers(app: FastAPI, settings: Settings) -> Routers:
     """Initialize all routers from modules"""
-    router_manager = Routers(app)
+    router_manager = Routers(app, settings)
     router_manager.discover_and_include_routers()
     return router_manager
