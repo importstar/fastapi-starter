@@ -4,11 +4,21 @@ User API router with REST endpoints
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from api_app.core.base_schemas import ErrorResponse
+
 from .use_case import get_user_use_case, UserUseCase
 from .schemas import CreateUser, UserResponse
 
 
-router = APIRouter(prefix="/v1/user", tags=["User"])
+router = APIRouter(
+    prefix="/v1/user",
+    tags=["User"],
+    responses={
+        404: {"model": ErrorResponse, "description": "User Not Found"},
+        422: {"model": ErrorResponse, "description": "Validation Error"},
+        500: {"model": ErrorResponse, "description": "Internal Server Error"},
+    },
+)
 
 
 @router.get("/")
@@ -34,10 +44,10 @@ async def register_user(
     return new_user
 
 
-@router.get("/{user_id}")
+@router.get("/{user_id}", response_model=UserResponse)
 async def get_user_by_id(
     user_id: str, use_case: UserUseCase = Depends(get_user_use_case)
-) -> UserResponse:
+):
     """
     Get user by ID.
 

@@ -1,4 +1,4 @@
-# � FastAPI Clean Architecture Starter
+# 🚀 FastAPI Clean Architecture Starter
 
 โปรเจกต์ FastAPI ที่ใช้ Clean Architecture และ Domain-Driven Design (DDD) patterns พร้อมด้วย MongoDB (Beanie) และระบบ Modular ที่ง่ายต่อการขยาย
 
@@ -12,7 +12,7 @@
 - 📝 **Type Safety** - TypeScript-like typing ใน Python
 - 🧪 **Testing Ready** - โครงสร้างพร้อมสำหรับการทดสอบ
 
-## �📁 โครงสร้างโปรเจกต์
+## 📁 โครงสร้างโปรเจกต์
 
 ```
 fastapi-beanie-starter/
@@ -70,6 +70,12 @@ fastapi-beanie-starter/
 │           ├── __init__.py
 │           └── router.py    # Health Check Endpoints
 │
+├── sang_cli/                # CLI Tools สำหรับ Development
+│   ├── __init__.py
+│   ├── main.py              # CLI Entry Point
+│   ├── create_module.py     # Module Generator
+│   └── README.md            # คู่มือ CLI
+│
 └── scripts/                 # Development Scripts
     ├── create-module        # CLI สร้าง Module ใหม่
     ├── create-example-module # สร้าง Example Module
@@ -110,7 +116,7 @@ modules/{feature}/
 
 ### 📋 ความต้องการของระบบ
 
-- Python 3.11+
+- Python 3.12+
 - Poetry (สำหรับจัดการ dependencies)
 - MongoDB (Local หรือ Cloud)
 
@@ -176,12 +182,14 @@ modules/{feature}/
 
 ### 🎯 Quick Start - สร้าง API แรกของคุณ
 
-1. **สร้าง Module ใหม่**
+1. **สร้าง Module ใหม่ด้วย Sang CLI**
 
    ```bash
-   # สร้าง products module
-   python scripts/create-module
-   # ป้อนชื่อ: products
+   # สร้าง products module แบบ interactive
+   poetry run sang module
+
+   # หรือสร้างโดยระบุชื่อ
+   poetry run sang module create products
    ```
 
 2. **ไฟล์ที่สร้างขึ้นอัตโนมัติ:**
@@ -239,30 +247,41 @@ GET /v1/health
 
 ## 🛠️ Development Tools
 
-### 🏗️ Module Generator CLI
+### 🏗️ Sang CLI - Module Generator
 
-เครื่องมือสร้าง FastAPI modules ใหม่ตามโครงสร้าง Clean Architecture:
+เครื่องมือ CLI ที่ทรงพลังสำหรับสร้าง FastAPI modules ใหม่ตามโครงสร้าง Clean Architecture:
 
 ```bash
-# สร้าง module ใหม่
-python scripts/create-module
+# สร้าง module ใหม่ (Interactive mode)
+poetry run sang module
+
+# สร้าง module โดยระบุชื่อ
+poetry run sang module create products
+
+# สร้างแบบ force overwrite
+poetry run sang module create products --force
+
+# ดูว่าจะสร้างไฟล์อะไรบ้าง (Dry run)
+poetry run sang module create products --dry-run
+
+# ดู modules ที่มีอยู่
+poetry run sang module list
 
 # ดู help
-python scripts/create-module --help
-
-# สร้าง example module (products)
-python scripts/create-example-module
+poetry run sang --help
+poetry run sang module --help
 ```
 
-**ไฟล์ที่ CLI จะสร้างให้:**
+**คุณสมบัติของ Sang CLI:**
 
-- `schemas.py` - Pydantic schemas (DTOs) สำหรับ validation
-- `repository.py` - Data access layer สำหรับเข้าถึง database
-- `use_case.py` - Business logic layer สำหรับ business rules
-- `router.py` - API endpoints สำหรับ HTTP requests
-- `{feature}_model.py` - Beanie document model สำหรับ database
+- ✅ **Auto Code Generation** - สร้างไฟล์ตาม Clean Architecture pattern
+- ✅ **Interactive Mode** - ใช้งานง่ายด้วย prompt
+- ✅ **Dry Run Mode** - ดูผลลัพธ์ก่อนสร้างไฟล์จริง
+- ✅ **Force Overwrite** - เขียนทับไฟล์เดิมได้
+- ✅ **Module Listing** - ดู modules ที่มีอยู่
+- ✅ **Type Hints** - สร้าง code พร้อม type annotations
 
-รายละเอียดเพิ่มเติม: [scripts/README.md](scripts/README.md)
+รายละเอียดเพิ่มเติม: [sang_cli/README.md](sang_cli/README.md)
 
 ### 🔧 Development Scripts
 
@@ -391,6 +410,7 @@ docker run -p 8000:8000 fastapi-app
 ## 🙋‍♂️ ต้องการความช่วยเหลือ?
 
 - 📖 อ่านคู่มือเต็ม: [.github/instructions/fastapi.instructions.md](.github/instructions/fastapi.instructions.md)
+- 🛠️ คู่มือ CLI: [sang_cli/README.md](sang_cli/README.md)
 - 🐛 รายงานปัญหา: [GitHub Issues](https://github.com/your-repo/issues)
 - 💬 หารือ: [GitHub Discussions](https://github.com/your-repo/discussions)
 

@@ -4,7 +4,7 @@ Base schemas for the application
 
 from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 
 
@@ -26,7 +26,7 @@ class ErrorResponse(BaseModel):
 
     detail: str
     code: Optional[str] = None
-    timestamp: datetime = datetime.utcnow()
+    timestamp: datetime = lambda: datetime.now(UTC)
 
 
 class SuccessResponse(BaseModel):

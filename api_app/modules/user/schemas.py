@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime, timezone
 
-from ...core.schemas import BaseSchema
+from ...core.base_schemas import BaseSchema
 
 
 class UserRole(Enum):
