@@ -1,6 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 import bson
-from ..models import beanie_client
+from .database import beanie_client
 
 
 class File:
