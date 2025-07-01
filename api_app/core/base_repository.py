@@ -2,9 +2,10 @@
 Base repository pattern implementation
 """
 
-from typing import TypeVar, Generic, Optional, List, Dict, Any
+from typing import TypeVar, Generic, Optional, List, Dict, Any, Type
 from beanie import Document
 from datetime import datetime
+from pydantic import BaseModel
 
 
 T = TypeVar("T", bound=Document)
@@ -13,7 +14,7 @@ T = TypeVar("T", bound=Document)
 class BaseRepository(Generic[T]):
     """Base repository with common CRUD operations"""
 
-    def __init__(self, model: type[T]):
+    def __init__(self, model: Type[T]):
         self.model = model
 
     async def create(self, entity: T) -> T:
@@ -76,3 +77,12 @@ class BaseRepository(Generic[T]):
         """Check if entity exists"""
         entity = await self.find_one(filters)
         return entity is not None
+
+    def schema_dump(
+        self, schema: BaseModel, exclude: Optional[List[str]] = None, **extra_fields
+    ) -> T:
+        """Create entity from Pydantic schema with extra fields"""
+        exclude = exclude or []
+        data = schema.model_dump(exclude=set(exclude))
+        data.update(extra_fields)
+        return self.model(**data)

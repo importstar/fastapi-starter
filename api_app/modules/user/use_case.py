@@ -7,13 +7,14 @@ from fastapi import Depends
 from ...models.user_model import User
 from .repository import UserRepository
 from .schemas import CreateUser, UserRole
+from ...core.base_use_case import BaseUseCase
 
 
-class UserUseCase:
+class UserUseCase(BaseUseCase[User, UserRepository]):
     """Use case for User business operations"""
 
-    def __init__(self, user_repository: UserRepository):
-        self.user_repository = user_repository
+    def __init__(self, repository: UserRepository):
+        super().__init__(repository)
 
     async def register_user(self, user_data: CreateUser) -> User:
         """Register a new user with business logic validation"""
@@ -22,7 +23,7 @@ class UserUseCase:
 
         # 2. Process registration through repository
         try:
-            new_user = await self.user_repository.register_user(user_data)
+            new_user = await self.repository.register_user(user_data)
             return new_user
         except ValueError as e:
             # Convert repository errors to appropriate use case errors
@@ -53,18 +54,6 @@ class UserUseCase:
                 f"Invalid role. Must be one of: {', '.join(UserRole.__members__.keys())}"
             )
 
-    async def _post_registration_actions(self, user: User) -> None:
-        """Perform actions after successful user registration"""
-        # TODO: Add post-registration business logic
-        # Examples:
-        # - Send welcome email
-        # - Log registration event
-        # - Create user profile
-        # - Set up default preferences
-        pass
-
-    # TODO: Add your additional business logic methods here
-
 
 # Dependency providers
 async def get_user_repository() -> UserRepository:
@@ -76,4 +65,4 @@ async def get_user_use_case(
     repository: UserRepository = Depends(get_user_repository),
 ) -> UserUseCase:
     """Get user use case with injected dependencies"""
-    return UserUseCase(user_repository=repository)
+    return UserUseCase(repository)

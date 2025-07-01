@@ -60,13 +60,18 @@ class CreateUser(BaseModel):
     )
 
 
-class UserResponse(BaseSchema, BaseUser):
-    """Response schema for user operations"""
+class UserParams(BaseSchema):
+    username: Optional[str] = Field(
+        default=None, description="Filter by username", max_length=50
+    )
+    email: Optional[str] = Field(
+        default=None, description="Filter by email", max_length=255
+    )
+    role: Optional[UserRole] = Field(default=None, description="Filter by user role")
+    is_active: Optional[bool] = Field(
+        default=None, description="Filter by active status"
+    )
 
-    @classmethod
-    def from_entity(cls, entity) -> "UserResponse":
-        """Convert entity to response schema"""
-        return cls(
-            id=str(entity.id),
-            # TODO: Map entity fields to response fields
-        )
+
+class UserResponse(BaseSchema, BaseUser):
+    name: str = Field(description="Full name of the user", alias="fullname")
