@@ -15,20 +15,21 @@ python scripts/create-module
 ## วิธีการทำงาน
 
 1. **ป้อนชื่อ feature**: ระบบจะถามชื่อ feature ที่ต้องการสร้าง
+
    - ใช้ lowercase เท่านั้น
-   - สามารถใช้ underscore (_) และตัวเลขได้
+   - สามารถใช้ underscore (\_) และตัวเลขได้
    - ตัวอย่าง: `products`, `user_profiles`, `order_items`
 
 2. **ยืนยันการสร้าง**: กด `y` หรือ `yes` เพื่อยืนยัน
 
 3. **ระบบจะสร้างไฟล์ทั้งหมด**:
-   - `api_app_new/modules/{feature}/`
+   - `api_app/modules/{feature}/`
      - `__init__.py`
      - `schemas.py` - Pydantic schemas (DTOs)
      - `repository.py` - Data access layer
      - `use_case.py` - Business logic layer
      - `router.py` - API endpoints
-   - `api_app_new/models/{feature}_model.py` - Beanie document model
+   - `api_app/models/{feature}_model.py` - Beanie document model
 
 ## ตัวอย่างการใช้งาน
 
@@ -41,7 +42,7 @@ $ python scripts/create-module
 📝 Enter feature name (e.g., 'products', 'orders', 'user_profiles'): products
 
 📋 Creating module: products
-📁 Location: api_app_new/modules/products
+📁 Location: api_app/modules/products
 
 ❓ Create 'products' module? (y/N): y
 
@@ -54,48 +55,53 @@ $ python scripts/create-module
 📝 Creating model file...
 
 ✅ Successfully created 'products' module!
-📁 Module path: /path/to/api_app_new/modules/products
-📄 Model file: /path/to/api_app_new/models/products_model.py
+📁 Module path: /path/to/api_app/modules/products
+📄 Model file: /path/to/api_app/models/products_model.py
 
 🔧 Next steps:
-1. Update api_app_new/infrastructure/database.py to include Products model
+1. Update api_app/infrastructure/database.py to include Products model
 2. Review and customize the generated files as needed
 3. The router will be auto-discovered and included in the API
 
 📝 Generated files:
-   - /path/to/api_app_new/modules/products/__init__.py
-   - /path/to/api_app_new/modules/products/schemas.py
-   - /path/to/api_app_new/modules/products/repository.py
-   - /path/to/api_app_new/modules/products/use_case.py
-   - /path/to/api_app_new/modules/products/router.py
-   - /path/to/api_app_new/models/products_model.py
+   - /path/to/api_app/modules/products/__init__.py
+   - /path/to/api_app/modules/products/schemas.py
+   - /path/to/api_app/modules/products/repository.py
+   - /path/to/api_app/modules/products/use_case.py
+   - /path/to/api_app/modules/products/router.py
+   - /path/to/api_app/models/products_model.py
 ```
 
 ## โครงสร้างที่สร้างขึ้น
 
 ### Schemas (DTOs)
+
 - `{Feature}Base` - Base schema with common fields
 - `{Feature}Request` - Request schema for creating/updating
 - `{Feature}Response` - Response schema with additional fields
 
 ### Repository
+
 - CRUD operations
 - Custom query methods
 - Inherits from `BaseRepository`
 
 ### Use Case
+
 - Business logic
 - Validation
 - Dependency injection patterns
 - Cross-module dependencies support
 
 ### Router
+
 - REST API endpoints (GET, POST, PUT, DELETE)
 - Authentication required
 - Proper HTTP status codes
 - Error handling
 
 ### Model
+
 - Beanie document model
 - MongoDB collection settings
 - Indexes configuration
@@ -103,10 +109,11 @@ $ python scripts/create-module
 ## หลังจากสร้าง Module
 
 1. **อัพเดต database.py**:
+
    ```python
-   # api_app_new/infrastructure/database.py
-   from api_app_new.models.{feature}_model import {Feature}
-   
+   # api_app/infrastructure/database.py
+   from ...models.{feature}_model import {Feature}
+
    # เพิ่มใน document_models list
    document_models = [
        User,
@@ -116,6 +123,7 @@ $ python scripts/create-module
    ```
 
 2. **ปรับแต่งไฟล์ตามความต้องการ**:
+
    - แก้ไข fields ใน schemas
    - เพิ่ม business logic ใน use case
    - เพิ่ม custom query methods ใน repository
@@ -127,7 +135,7 @@ $ python scripts/create-module
 
 - รันจาก root directory ของโปรเจค
 - Python 3.8+
-- โปรเจคต้องมี `api_app_new` directory
+- โปรเจคต้องมี `api_app` directory
 
 ## Error Handling
 

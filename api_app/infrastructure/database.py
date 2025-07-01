@@ -20,7 +20,7 @@ class BeanieClient:
         """Returns a list of all MongoDB document models defined in `models` module."""
 
         documents = []
-        models_module_name = "api_app_new.models"
+        models_module_name = "api_app.models"
 
         try:
             # Import the models package

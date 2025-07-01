@@ -11,14 +11,15 @@ from pathlib import Path
 
 def create_example_module():
     """Create an example products module"""
-    script_path = Path(__file__).parent / "create-module"
-    
+    # Get the create-module script path relative to this script
+    script_path = Path(__file__).resolve().parent / "create-module"
+
     print("🎯 Creating example 'products' module...")
     print("=" * 50)
-    
+
     # Mock user input by writing to a temporary input file
     input_data = "products\ny\n"
-    
+
     try:
         # Run the create-module script with simulated input
         process = subprocess.Popen(
@@ -27,22 +28,24 @@ def create_example_module():
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            cwd=script_path.parent.parent
+            cwd=script_path.parent.parent,
         )
-        
+
         stdout, stderr = process.communicate(input=input_data)
-        
+
         if process.returncode == 0:
             print(stdout)
             print("\n✅ Example module creation completed!")
             print("\n📋 You can now:")
-            print("1. Check the generated files in api_app_new/modules/products/")
-            print("2. Update api_app_new/infrastructure/database.py to include Products model")
+            print("1. Check the generated files in api_app/modules/products/")
+            print(
+                "2. Update api_app/infrastructure/database.py to include Products model"
+            )
             print("3. Run the API to test the new endpoints")
         else:
             print(f"❌ Error: {stderr}")
             print(f"Return code: {process.returncode}")
-            
+
     except Exception as e:
         print(f"❌ Failed to create example module: {e}")
 

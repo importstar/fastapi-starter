@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi_pagination import add_pagination
 
-from api_app_new.core.router import init_routers
+from .core.router import init_routers
 from .core import http_error, validation_error
 from contextlib import asynccontextmanager
 from .middlewares.base import init_all_middlewares
@@ -15,8 +15,8 @@ from pathlib import Path
 
 
 def create_app() -> FastAPI:
-    # Get project root directory (parent of api_app_new)
-    project_root = Path(__file__).parent.parent
+    # Get project root directory (go up 2 levels from run.py)
+    project_root = Path(__file__).resolve().parent.parent
 
     env_file = ".env.dev" if os.getenv("APP_ENV") == "dev" else ".env"
     env_path = project_root / env_file

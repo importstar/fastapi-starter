@@ -11,8 +11,8 @@ from ..utils.logging import InterceptHandler
 
 ENV: str = os.getenv("APP_ENV", "")
 
-# Get project root directory
-PROJECT_ROOT = Path(__file__).parent.parent.parent
+# Get project root directory (go up 3 levels from config.py)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 class Settings(BaseSettings):

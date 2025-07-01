@@ -6,7 +6,7 @@ from typing import List
 from fastapi import APIRouter, FastAPI
 from loguru import logger
 
-from api_app.api.core.config import Settings
+from ..core.config import Settings
 
 
 class Routers:
@@ -38,7 +38,7 @@ class Routers:
     def _discover_routers(self) -> List[APIRouter]:
         """Discover all routers from modules/*/router.py"""
         routers = []
-        modules_package_name = "api_app_new.modules"
+        modules_package_name = "api_app.modules"
 
         try:
             # Import the modules package

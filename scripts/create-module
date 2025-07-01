@@ -16,7 +16,7 @@ def validate_feature_name(feature_name: str) -> bool:
 
 def create_directory_structure(base_path: Path, feature_name: str) -> Path:
     """Create the module directory structure"""
-    module_path = base_path / "api_app_new" / "modules" / feature_name
+    module_path = base_path / "api_app" / "modules" / feature_name
     module_path.mkdir(parents=True, exist_ok=True)
     return module_path
 
@@ -38,7 +38,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
-from api_app_new.core.schemas import BaseSchema
+from ...core.schemas import BaseSchema
 
 
 class {pascal_case}Request(BaseModel):
@@ -73,8 +73,8 @@ def create_repository_file(module_path: Path, feature_name: str):
 """
 from typing import List, Optional
 
-from api_app_new.core.base_repository import BaseRepository
-from api_app_new.models.{feature_name}_model import {pascal_case}
+from ...core.base_repository import BaseRepository
+from ...models.{feature_name}_model import {pascal_case}
 
 
 class {pascal_case}Repository(BaseRepository[{pascal_case}]):
@@ -103,7 +103,7 @@ def create_use_case_file(module_path: Path, feature_name: str):
 from fastapi import Depends
 from typing import List, Optional
 
-from api_app_new.models.{feature_name}_model import {pascal_case}
+from ...models.{feature_name}_model import {pascal_case}
 from .repository import {pascal_case}Repository
 from .schemas import {pascal_case}Request, {pascal_case}Response
 
@@ -151,7 +151,7 @@ def create_router_file(module_path: Path, feature_name: str):
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
-from api_app_new.models.user_model import User
+from ...models.user_model import User
 from .use_case import get_{feature_name}_use_case, {pascal_case}UseCase
 from .schemas import {pascal_case}Request, {pascal_case}Response
 
@@ -175,7 +175,7 @@ router = APIRouter(prefix="/v1/{feature_name}", tags=["{pascal_case}"])
 def create_model_file(base_path: Path, feature_name: str):
     """Create model file"""
     pascal_case = "".join(word.capitalize() for word in feature_name.split("_"))
-    models_path = base_path / "api_app_new" / "models"
+    models_path = base_path / "api_app" / "models"
     model_file = models_path / f"{feature_name}_model.py"
 
     content = f'''"""
@@ -224,7 +224,7 @@ def print_success_message(feature_name: str, module_path: Path, model_file: Path
     print()
     print("🔧 Next steps:")
     print(
-        f"1. Update api_app_new/infrastructure/database.py to include {pascal_case} model"
+        f"1. Update api_app/infrastructure/database.py to include {pascal_case} model"
     )
     print("2. Customize the generated skeleton files according to your requirements:")
     print(f"   - Add model fields in {feature_name}_model.py")
@@ -271,17 +271,17 @@ def print_help():
     print("    - Confirmation to create the module")
     print()
     print("GENERATED SKELETON FILES:")
-    print("    api_app_new/modules/{feature}/")
+    print("    api_app/modules/{feature}/")
     print("    ├── __init__.py")
     print("    ├── schemas.py      # Basic Pydantic schemas with TODOs")
     print("    ├── repository.py   # Basic repository structure with TODOs")
     print("    ├── use_case.py     # Basic use case structure with TODOs")
     print("    └── router.py       # Basic router structure with TODOs")
-    print("    api_app_new/models/{feature}_model.py  # Basic Beanie model with TODOs")
+    print("    api_app/models/{feature}_model.py  # Basic Beanie model with TODOs")
     print()
     print("REQUIREMENTS:")
     print("    - Run from project root directory")
-    print("    - Directory must contain 'api_app_new' folder")
+    print("    - Directory must contain 'api_app' folder")
     print()
     print("NOTE:")
     print("    Generated files are skeleton templates with TODO comments.")
@@ -303,9 +303,9 @@ def main():
     current_dir = Path.cwd()
 
     # Check if we're in the right directory
-    if not (current_dir / "api_app_new").exists():
+    if not (current_dir / "api_app").exists():
         print("❌ Error: This script must be run from the project root directory")
-        print("   Make sure you're in the directory containing 'api_app_new' folder")
+        print("   Make sure you're in the directory containing 'api_app' folder")
         sys.exit(1)
 
     # Get feature name from user
@@ -330,7 +330,7 @@ def main():
             continue
 
         # Check if module already exists
-        module_path = current_dir / "api_app_new" / "modules" / feature_name
+        module_path = current_dir / "api_app" / "modules" / feature_name
         if module_path.exists():
             print(f"❌ Module '{feature_name}' already exists at {module_path}")
             continue
@@ -338,7 +338,7 @@ def main():
         break
 
     print(f"\n📋 Creating module skeleton: {feature_name}")
-    print(f"📁 Location: api_app_new/modules/{feature_name}")
+    print(f"📁 Location: api_app/modules/{feature_name}")
 
     # Confirm creation
     confirm = (

@@ -2,11 +2,11 @@
 User repository for data access operations
 """
 
-from typing import List, Optional
+from typing import Optional
 from datetime import datetime, timezone
 
-from api_app_new.core.base_repository import BaseRepository
-from api_app_new.models.user_model import User
+from ...core.base_repository import BaseRepository
+from ...models.user_model import User
 from .schemas import CreateUser
 from werkzeug.security import generate_password_hash
 

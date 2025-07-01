@@ -4,7 +4,7 @@ User use case containing business logic
 
 from fastapi import Depends
 
-from api_app_new.models.user_model import User
+from ...models.user_model import User
 from .repository import UserRepository
 from .schemas import CreateUser, UserRole
 

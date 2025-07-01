@@ -21,7 +21,7 @@ fastapi-beanie-starter/
 ├── pyproject.toml           # การจัดการ Dependencies ด้วย Poetry
 ├── README.md                # คู่มือการใช้งาน (ไฟล์นี้)
 │
-├── api_app_new/             # โฟลเดอร์หลักของแอปพลิเคชัน (เวอร์ชันใหม่)
+├── api_app/             # โฟลเดอร์หลักของแอปพลิเคชัน
 │   ├── main.py              # จุดเริ่มต้นแอปพลิเคชัน
 │   ├── run.py               # Script สำหรับรันเซิร์ฟเวอร์
 │   │
@@ -164,7 +164,7 @@ modules/{feature}/
    # โหมด Development
    ./scripts/run-dev
    # หรือ
-   poetry run python api_app_new/run.py
+   poetry run python api_app/run.py
 
    # โหมด Production
    ./scripts/run-prod
@@ -349,7 +349,7 @@ python scripts/create-example-module
 poetry run pytest
 
 # รัน tests พร้อม coverage
-poetry run pytest --cov=api_app_new
+poetry run pytest --cov=api_app
 
 # รัน tests ในโหมด watch
 poetry run pytest-watch
