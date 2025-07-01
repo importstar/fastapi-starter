@@ -6,12 +6,32 @@ import typer
 from pathlib import Path
 import re
 from typing import Optional
+from jinja2 import Environment, FileSystemLoader
 
 app = typer.Typer(
     name="create-module",
     help="Create a new FastAPI module skeleton following Clean Architecture patterns",
     add_completion=False,
 )
+
+
+def get_template_env() -> Environment:
+    """Get Jinja2 template environment"""
+    template_dir = Path(__file__).parent / "templates"
+    return Environment(
+        loader=FileSystemLoader(template_dir),
+        trim_blocks=True,
+        lstrip_blocks=True
+    )
+
+
+def get_template_context(feature_name: str) -> dict:
+    """Get template context variables"""
+    pascal_case = "".join(word.capitalize() for word in feature_name.split("_"))
+    return {
+        "feature_name": feature_name,
+        "pascal_case": pascal_case
+    }
 
 
 def validate_feature_name(feature_name: str) -> bool:
@@ -26,196 +46,41 @@ def create_directory_structure(base_path: Path, feature_name: str) -> Path:
     return module_path
 
 
-def create_init_file(module_path: Path):
-    """Create __init__.py file"""
-    init_content = '"""Module initialization"""'
-    (module_path / "__init__.py").write_text(init_content)
+def render_template_to_file(template_name: str, output_path: Path, context: dict):
+    """Render a Jinja2 template to a file"""
+    env = get_template_env()
+    template = env.get_template(template_name)
+    content = template.render(**context)
+    output_path.write_text(content)
 
 
-def create_schemas_file(module_path: Path, feature_name: str):
-    """Create schemas.py file"""
-    pascal_case = "".join(word.capitalize() for word in feature_name.split("_"))
-
-    content = f'''"""
-{pascal_case} module schemas (DTOs)
-"""
-from pydantic import BaseModel, Field
-from typing import Optional
-from datetime import datetime
-
-from ...core.base_schemas import BaseSchema
-
-
-class {pascal_case}Request(BaseModel):
-    """Request schema for {feature_name} operations"""
-    # TODO: Add your request fields here
-    pass
-
-
-class {pascal_case}Response(BaseSchema):
-    """Response schema for {feature_name} operations"""
-    id: str
-    # TODO: Add your response fields here
-
-    @classmethod
-    def from_entity(cls, entity) -> "{pascal_case}Response":
-        """Convert entity to response schema"""
-        return cls(
-            id=str(entity.id),
-            # TODO: Map entity fields to response fields
-        )
-'''
-
-    (module_path / "schemas.py").write_text(content)
-
-
-def create_repository_file(module_path: Path, feature_name: str):
-    """Create repository.py file"""
-    pascal_case = "".join(word.capitalize() for word in feature_name.split("_"))
-
-    content = f'''"""
-{pascal_case} repository for data access operations
-"""
-from typing import List, Optional
-
-from ...core.base_repository import BaseRepository
-from ...models.{feature_name}_model import {pascal_case}
-
-
-class {pascal_case}Repository(BaseRepository[{pascal_case}]):
-    """Repository for {pascal_case} data operations"""
+def create_module_files(module_path: Path, feature_name: str):
+    """Create all module files using templates"""
+    context = get_template_context(feature_name)
     
-    def __init__(self):
-        super().__init__({pascal_case})
-
-    # TODO: Add your custom repository methods here
-    # Example:
-    # async def find_by_custom_field(self, field_value: str) -> Optional[{pascal_case}]:
-    #     """Find {feature_name} by custom field"""
-    #     return await self.model.find_one({{"custom_field": field_value}})
-'''
-
-    (module_path / "repository.py").write_text(content)
-
-
-def create_use_case_file(module_path: Path, feature_name: str):
-    """Create use_case.py file"""
-    pascal_case = "".join(word.capitalize() for word in feature_name.split("_"))
-
-    content = f'''"""
-{pascal_case} use case containing business logic
-"""
-from fastapi import Depends
-from typing import List, Optional
-
-from ...models.{feature_name}_model import {pascal_case}
-from .repository import {pascal_case}Repository
-from .schemas import {pascal_case}Request, {pascal_case}Response
-
-
-class {pascal_case}UseCase:
-    """Use case for {pascal_case} business operations"""
+    # Create __init__.py
+    render_template_to_file("__init__.py.j2", module_path / "__init__.py", context)
     
-    def __init__(self, {feature_name}_repository: {pascal_case}Repository):
-        self.{feature_name}_repository = {feature_name}_repository
-
-    # TODO: Add your business logic methods here
-    # Example:
-    # async def process_{feature_name}(self, data: {pascal_case}Request) -> {pascal_case}Response:
-    #     """Process {feature_name} business logic"""
-    #     # 1. Validate business rules
-    #     # 2. Process data
-    #     # 3. Call repository
-    #     # 4. Return result
-    #     pass
-
-
-# Dependency providers
-async def get_{feature_name}_repository() -> {pascal_case}Repository:
-    """Get {feature_name} repository instance"""
-    return {pascal_case}Repository()
+    # Create schemas.py
+    render_template_to_file("schemas.py.j2", module_path / "schemas.py", context)
+    
+    # Create repository.py
+    render_template_to_file("repository.py.j2", module_path / "repository.py", context)
+    
+    # Create use_case.py
+    render_template_to_file("use_case.py.j2", module_path / "use_case.py", context)
+    
+    # Create router.py
+    render_template_to_file("router.py.j2", module_path / "router.py", context)
 
 
-async def get_{feature_name}_use_case(
-    repository: {pascal_case}Repository = Depends(get_{feature_name}_repository)
-) -> {pascal_case}UseCase:
-    """Get {feature_name} use case with injected dependencies"""
-    return {pascal_case}UseCase({feature_name}_repository=repository)
-'''
-
-    (module_path / "use_case.py").write_text(content)
-
-
-def create_router_file(module_path: Path, feature_name: str):
-    """Create router.py file"""
-    pascal_case = "".join(word.capitalize() for word in feature_name.split("_"))
-
-    content = f'''"""
-{pascal_case} API router with REST endpoints
-"""
-from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List
-
-from ...models.user_model import User
-from .use_case import get_{feature_name}_use_case, {pascal_case}UseCase
-from .schemas import {pascal_case}Request, {pascal_case}Response
-
-
-router = APIRouter(prefix="/v1/{feature_name}", tags=["{pascal_case}"])
-
-# TODO: Add your API endpoints here
-# Example:
-# @router.get("", response_model=List[{pascal_case}Response])
-# async def list_{feature_name}(
-#     {feature_name}_use_case: {pascal_case}UseCase = Depends(get_{feature_name}_use_case)
-# ):
-#     """List {feature_name} items"""
-#     # Implement your logic here
-#     pass
-'''
-
-    (module_path / "router.py").write_text(content)
-
-
-def create_model_file(base_path: Path, feature_name: str):
-    """Create model file"""
-    pascal_case = "".join(word.capitalize() for word in feature_name.split("_"))
+def create_model_file(base_path: Path, feature_name: str) -> Path:
+    """Create model file using template"""
+    context = get_template_context(feature_name)
     models_path = base_path / "api_app" / "models"
     model_file = models_path / f"{feature_name}_model.py"
-
-    content = f'''"""
-{pascal_case} Beanie document model
-"""
-from beanie import Document
-from pydantic import Field
-from typing import Optional
-from datetime import datetime, timezone
-
-
-class {pascal_case}(Document):
-    """
-    {pascal_case} document model for MongoDB collection
-    """
-    # TODO: Add your model fields here
-    # Example:
-    # name: str = Field(..., min_length=1, max_length=100)
-    # description: Optional[str] = Field(None, max_length=500)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: Optional[datetime] = None
-
-    class Settings:
-        name = "{feature_name}"  # Collection name in MongoDB
-        # TODO: Add your indexes here
-        # indexes = [
-        #     "field_name",
-        #     "created_at"
-        # ]
-
-    def __str__(self) -> str:
-        return f"{pascal_case}(id={{self.id}})"
-'''
-
-    model_file.write_text(content)
+    
+    render_template_to_file("model.py.j2", model_file, context)
     return model_file
 
 
@@ -371,23 +236,11 @@ def add(
         typer.secho("\n🔨 Creating module skeleton structure...", fg=typer.colors.CYAN)
         module_path = create_directory_structure(current_dir, feature_name)
 
-        # Create files
-        typer.echo("📝 Creating __init__.py...")
-        create_init_file(module_path)
+        # Create files using templates
+        typer.echo("📝 Creating module files from templates...")
+        create_module_files(module_path, feature_name)
 
-        typer.echo("📝 Creating schemas.py skeleton...")
-        create_schemas_file(module_path, feature_name)
-
-        typer.echo("📝 Creating repository.py skeleton...")
-        create_repository_file(module_path, feature_name)
-
-        typer.echo("📝 Creating use_case.py skeleton...")
-        create_use_case_file(module_path, feature_name)
-
-        typer.echo("📝 Creating router.py skeleton...")
-        create_router_file(module_path, feature_name)
-
-        typer.echo("📝 Creating model skeleton...")
+        typer.echo("📝 Creating model file...")
         model_file = create_model_file(current_dir, feature_name)
 
         # Success message

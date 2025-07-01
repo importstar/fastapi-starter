@@ -21,13 +21,14 @@ python-dotenv = "^1.0.1"
 beanie = "^1.29.0"
 python-jose = "^3.4.0"
 typer = "^0.16.0"
+jinja2 = "^3.1.6"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.34.0"
 ruff = "^0.9.5"
 
 [tool.poetry.scripts]
-sang = "sang_cli.main:main"
+forge = "cli.main:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

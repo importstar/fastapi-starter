@@ -1,0 +1,22 @@
+"""
+{{ pascal_case }} API router with REST endpoints
+"""
+from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List
+
+from ...models.user_model import User
+from .use_case import get_{{ feature_name }}_use_case, {{ pascal_case }}UseCase
+from .schemas import {{ pascal_case }}Request, {{ pascal_case }}Response
+
+
+router = APIRouter(prefix="/v1/{{ feature_name }}", tags=["{{ pascal_case }}"])
+
+# TODO: Add your API endpoints here
+# Example:
+# @router.get("", response_model=List[{{ pascal_case }}Response])
+# async def list_{{ feature_name }}(
+#     {{ feature_name }}_use_case: {{ pascal_case }}UseCase = Depends(get_{{ feature_name }}_use_case)
+# ):
+#     """List {{ feature_name }} items"""
+#     # Implement your logic here
+#     pass

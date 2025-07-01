@@ -70,7 +70,7 @@ fastapi-beanie-starter/
 │           ├── __init__.py
 │           └── router.py    # Health Check Endpoints
 │
-├── sang_cli/                # CLI Tools สำหรับ Development
+├── cli/                     # CLI Tools สำหรับ Development
 │   ├── __init__.py
 │   ├── main.py              # CLI Entry Point
 │   ├── create_module.py     # Module Generator
@@ -182,14 +182,14 @@ modules/{feature}/
 
 ### 🎯 Quick Start - สร้าง API แรกของคุณ
 
-1. **สร้าง Module ใหม่ด้วย Sang CLI**
+1. **สร้าง Module ใหม่ด้วย CLI**
 
    ```bash
    # สร้าง products module แบบ interactive
-   poetry run sang module
+   poetry run forge module
 
    # หรือสร้างโดยระบุชื่อ
-   poetry run sang module create products
+   poetry run forge module create products
    ```
 
 2. **ไฟล์ที่สร้างขึ้นอัตโนมัติ:**
@@ -247,32 +247,32 @@ GET /v1/health
 
 ## 🛠️ Development Tools
 
-### 🏗️ Sang CLI - Module Generator
+### 🏗️ CLI - Module Generator
 
 เครื่องมือ CLI ที่ทรงพลังสำหรับสร้าง FastAPI modules ใหม่ตามโครงสร้าง Clean Architecture:
 
 ```bash
 # สร้าง module ใหม่ (Interactive mode)
-poetry run sang module
+poetry run forge module
 
 # สร้าง module โดยระบุชื่อ
-poetry run sang module create products
+poetry run forge module create products
 
 # สร้างแบบ force overwrite
-poetry run sang module create products --force
+poetry run forge module create products --force
 
 # ดูว่าจะสร้างไฟล์อะไรบ้าง (Dry run)
-poetry run sang module create products --dry-run
+poetry run forge module create products --dry-run
 
 # ดู modules ที่มีอยู่
-poetry run sang module list
+poetry run forge module list
 
 # ดู help
-poetry run sang --help
-poetry run sang module --help
+poetry run forge --help
+poetry run forge module --help
 ```
 
-**คุณสมบัติของ Sang CLI:**
+**คุณสมบัติของ CLI:**
 
 - ✅ **Auto Code Generation** - สร้างไฟล์ตาม Clean Architecture pattern
 - ✅ **Interactive Mode** - ใช้งานง่ายด้วย prompt
@@ -281,7 +281,7 @@ poetry run sang module --help
 - ✅ **Module Listing** - ดู modules ที่มีอยู่
 - ✅ **Type Hints** - สร้าง code พร้อม type annotations
 
-รายละเอียดเพิ่มเติม: [sang_cli/README.md](sang_cli/README.md)
+รายละเอียดเพิ่มเติม: [cli/README.md](cli/README.md)
 
 ### 🔧 Development Scripts
 
@@ -410,7 +410,7 @@ docker run -p 8000:8000 fastapi-app
 ## 🙋‍♂️ ต้องการความช่วยเหลือ?
 
 - 📖 อ่านคู่มือเต็ม: [.github/instructions/fastapi.instructions.md](.github/instructions/fastapi.instructions.md)
-- 🛠️ คู่มือ CLI: [sang_cli/README.md](sang_cli/README.md)
+- 🛠️ คู่มือ CLI: [cli/README.md](cli/README.md)
 - 🐛 รายงานปัญหา: [GitHub Issues](https://github.com/your-repo/issues)
 - 💬 หารือ: [GitHub Discussions](https://github.com/your-repo/discussions)
 
