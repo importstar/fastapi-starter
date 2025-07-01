@@ -294,6 +294,125 @@ class {Schema}Response({Schema}Base, BaseSchema):
         )
 ```
 
+### **6. Pagination Pattern with fastapi_pagination**
+
+This project uses **fastapi_pagination** library with **Beanie pagination** for consistent paginated responses.
+
+```python
+# modules/{feature}/repository.py
+from fastapi_pagination import Page, Params
+from fastapi_pagination.ext.beanie import paginate
+
+from api_app.core.base_repository import BaseRepository
+from api_app.models.{feature}_model import {Model}
+
+class {Feature}Repository(BaseRepository[{Model}]):
+    def __init__(self):
+        super().__init__({Model})
+
+    async def get_paginated(self, params: Params) -> Page[{Model}]:
+        """Get paginated results"""
+        return await paginate(self.model, params)
+
+    async def find_by_status_paginated(
+        self,
+        status: str,
+        params: Params
+    ) -> Page[{Model}]:
+        """Get paginated results filtered by status"""
+        query = self.model.find({"status": status})
+        return await paginate(query, params)
+```
+
+```python
+# modules/{feature}/use_case.py
+from fastapi import Depends
+from fastapi_pagination import Page, Params
+
+from .repository import {Feature}Repository
+from .schemas import {Schema}Response
+
+class {Feature}UseCase:
+    def __init__(self, {feature}_repository: {Feature}Repository):
+        self.{feature}_repository = {feature}_repository
+
+    async def get_all_paginated(self, params: Params) -> Page[{Schema}Response]:
+        """Get paginated list of items"""
+        page = await self.{feature}_repository.get_paginated(params)
+
+        # Transform entities to response schemas
+        items = [self._entity_to_response(item) for item in page.items]
+
+        # Return new page with transformed items
+        return Page(
+            items=items,
+            total=page.total,
+            page=page.page,
+            size=page.size,
+            pages=page.pages
+        )
+
+    def _entity_to_response(self, entity) -> {Schema}Response:
+        """Convert entity to response schema"""
+        return {Schema}Response.from_entity(entity)
+```
+
+```python
+# modules/{feature}/router.py
+from fastapi import APIRouter, Depends
+from fastapi_pagination import Page, Params
+
+from api_app.core.dependencies import get_current_active_user
+from api_app.models.user_model import User
+from .use_case import get_{feature}_use_case, {Feature}UseCase
+from .schemas import {Schema}Response
+
+router = APIRouter(prefix="/v1/{feature}", tags=["{Feature}"])
+
+@router.get("", response_model=Page[{Schema}Response])
+async def list_{feature}(
+    params: Params = Depends(),
+    current_user: User = Depends(get_current_active_user),
+    {feature}_use_case: {Feature}UseCase = Depends(get_{feature}_use_case)
+):
+    """Get paginated list of {feature} items"""
+    return await {feature}_use_case.get_all_paginated(params)
+
+@router.get("/by-status/{status}", response_model=Page[{Schema}Response])
+async def list_{feature}_by_status(
+    status: str,
+    params: Params = Depends(),
+    current_user: User = Depends(get_current_active_user),
+    {feature}_use_case: {Feature}UseCase = Depends(get_{feature}_use_case)
+):
+    """Get paginated list filtered by status"""
+    return await {feature}_use_case.get_by_status_paginated(status, params)
+```
+
+**Pagination Query Parameters:**
+
+- `page`: Page number (default: 1)
+- `size`: Items per page (default: 50, max: 100)
+
+**Example API calls:**
+
+```
+GET /v1/users?page=1&size=20
+GET /v1/users/by-status/active?page=2&size=10
+```
+
+**Response format:**
+
+```json
+{
+  "items": [...],
+  "total": 150,
+  "page": 1,
+  "size": 20,
+  "pages": 8
+}
+```
+
 ## 🔧 Essential Patterns
 
 ### **Error Handling**
