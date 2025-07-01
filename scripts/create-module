@@ -1,0 +1,481 @@
+#!/usr/bin/env python3
+"""
+CLI script to create a new FastAPI module following the project structure.
+Usage: python scripts/create-module
+"""
+
+import sys
+from pathlib import Path
+import re
+
+
+def validate_feature_name(feature_name: str) -> bool:
+    """Validate feature name format (lowercase, alphanumeric, underscores)"""
+    return bool(re.match(r"^[a-z][a-z0-9_]*$", feature_name))
+
+
+def create_directory_structure(base_path: Path, feature_name: str) -> Path:
+    """Create the module directory structure"""
+    module_path = base_path / "api_app_new" / "modules" / feature_name
+    module_path.mkdir(parents=True, exist_ok=True)
+    return module_path
+
+
+def create_init_file(module_path: Path):
+    """Create __init__.py file"""
+    init_content = '"""Module initialization"""'
+    (module_path / "__init__.py").write_text(init_content)
+
+
+def create_schemas_file(module_path: Path, feature_name: str):
+    """Create schemas.py file"""
+    pascal_case = "".join(word.capitalize() for word in feature_name.split("_"))
+
+    content = f'''"""
+{pascal_case} module schemas (DTOs)
+"""
+from pydantic import BaseModel, Field
+from typing import Optional
+from datetime import datetime
+
+from api_app_new.core.schemas import BaseSchema
+
+
+class Base{pascal_case}(BaseModel):
+    """Base schema with common fields"""
+    name: str = Field(..., min_length=1, max_length=100, description="Name of the {feature_name}")
+    description: Optional[str] = Field(None, max_length=500, description="Description")
+
+
+class Create{pascal_case}(Base{pascal_case}):
+    """Request schema for creating {feature_name}"""
+    pass
+
+
+class Update{pascal_case}(Base{pascal_case}):
+    """Request schema for updating {feature_name}"""
+    name: Optional[str] = Field(None, min_length=1, max_length=100, description="Name of the {feature_name}")
+    description: Optional[str] = Field(None, max_length=500, description="Description")
+
+
+class Get{pascal_case}(Base{pascal_case}, BaseSchema):
+    """Response schema with additional fields"""
+    id: str
+    status: str = "active"
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    @classmethod
+    def from_entity(cls, entity) -> "Get{pascal_case}":
+        """Convert entity to response schema"""
+        return cls(
+            id=str(entity.id),
+            name=entity.name,
+            description=entity.description,
+            status=entity.status,
+            created_at=entity.created_at,
+            updated_at=entity.updated_at
+        )
+'''
+
+    (module_path / "schemas.py").write_text(content)
+
+
+def create_repository_file(module_path: Path, feature_name: str):
+    """Create repository.py file"""
+    pascal_case = "".join(word.capitalize() for word in feature_name.split("_"))
+
+    content = f'''"""
+{pascal_case} repository for data access operations
+"""
+from typing import List, Optional
+
+from api_app_new.core.base_repository import BaseRepository
+from api_app_new.models.{feature_name}_model import {pascal_case}
+
+
+class {pascal_case}Repository(BaseRepository[{pascal_case}]):
+    """Repository for {pascal_case} data operations"""
+    
+    def __init__(self):
+        super().__init__({pascal_case})
+
+    async def find_by_name(self, name: str) -> Optional[{pascal_case}]:
+        """Find {feature_name} by name"""
+        return await self.model.find_one({{"name": name}})
+
+    async def find_active(self) -> List[{pascal_case}]:
+        """Find only active {feature_name} records"""
+        return await self.model.find({{"status": "active"}}).to_list()
+
+    async def find_by_status(self, status: str) -> List[{pascal_case}]:
+        """Find {feature_name} by status"""
+        return await self.model.find({{"status": status}}).to_list()
+'''
+
+    (module_path / "repository.py").write_text(content)
+
+
+def create_use_case_file(module_path: Path, feature_name: str):
+    """Create use_case.py file"""
+    pascal_case = "".join(word.capitalize() for word in feature_name.split("_"))
+
+    content = f'''"""
+{pascal_case} use case containing business logic
+"""
+from fastapi import Depends, HTTPException, status
+from typing import List, Optional
+
+from api_app_new.core.exceptions import ValidationError
+from api_app_new.models.{feature_name}_model import {pascal_case}
+from .repository import {pascal_case}Repository
+from .schemas import Create{pascal_case}, Update{pascal_case}, Get{pascal_case}
+
+
+class {pascal_case}UseCase:
+    """Use case for {pascal_case} business operations"""
+    
+    def __init__(self, {feature_name}_repository: {pascal_case}Repository):
+        self.{feature_name}_repository = {feature_name}_repository
+
+    async def create(self, data: Create{pascal_case}) -> {pascal_case}:
+        """Create new {feature_name}"""
+        # 1. Validate business rules
+        await self._validate_unique_name(data.name)
+
+        # 2. Create entity
+        {feature_name}_data = data.model_dump()
+        {feature_name}_data["status"] = "active"
+        
+        new_{feature_name} = {pascal_case}(**{feature_name}_data)
+
+        # 3. Save to repository
+        result = await self.{feature_name}_repository.create(new_{feature_name})
+        return result
+
+    async def get_all(self) -> List[{pascal_case}]:
+        """Get all active {feature_name} items"""
+        return await self.{feature_name}_repository.find_active()
+
+    async def get_by_id(self, {feature_name}_id: str) -> Optional[{pascal_case}]:
+        """Get {feature_name} by ID"""
+        return await self.{feature_name}_repository.find_by_id({feature_name}_id)
+
+    async def update(self, {feature_name}_id: str, data: Update{pascal_case}) -> Optional[{pascal_case}]:
+        """Update {feature_name}"""
+        # 1. Check if exists
+        existing_{feature_name} = await self.get_by_id({feature_name}_id)
+        if not existing_{feature_name}:
+            return None
+
+        # 2. Validate unique name (if changed)
+        if data.name and data.name != existing_{feature_name}.name:
+            await self._validate_unique_name(data.name)
+
+        # 3. Update
+        update_data = data.model_dump(exclude_unset=True)
+        return await self.{feature_name}_repository.update({feature_name}_id, update_data)
+
+    async def delete(self, {feature_name}_id: str) -> bool:
+        """Soft delete {feature_name}"""
+        return await self.{feature_name}_repository.update({feature_name}_id, {{"status": "deleted"}})
+
+    async def _validate_unique_name(self, name: str) -> None:
+        """Validate that {feature_name} name is unique"""
+        existing = await self.{feature_name}_repository.find_by_name(name)
+        if existing:
+            raise ValidationError(f"{pascal_case} with name '{{name}}' already exists")
+
+
+# Dependency providers
+async def get_{feature_name}_repository() -> {pascal_case}Repository:
+    """Get {feature_name} repository instance"""
+    return {pascal_case}Repository()
+
+
+async def get_{feature_name}_use_case(
+    repository: {pascal_case}Repository = Depends(get_{feature_name}_repository)
+) -> {pascal_case}UseCase:
+    """Get {feature_name} use case with injected dependencies"""
+    return {pascal_case}UseCase({feature_name}_repository=repository)
+'''
+
+    (module_path / "use_case.py").write_text(content)
+
+
+def create_router_file(module_path: Path, feature_name: str):
+    """Create router.py file"""
+    pascal_case = "".join(word.capitalize() for word in feature_name.split("_"))
+
+    content = f'''"""
+{pascal_case} API router with REST endpoints
+"""
+from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List
+
+from api_app_new.core.dependencies import get_current_active_user
+from api_app_new.models.user_model import User
+from .use_case import get_{feature_name}_use_case, {pascal_case}UseCase
+from .schemas import Create{pascal_case}, Update{pascal_case}, Get{pascal_case}
+
+
+router = APIRouter(prefix="/v1/{feature_name}", tags=["{pascal_case}"])
+
+
+@router.get("", response_model=List[Get{pascal_case}])
+async def list_{feature_name}(
+    current_user: User = Depends(get_current_active_user),
+    {feature_name}_use_case: {pascal_case}UseCase = Depends(get_{feature_name}_use_case)
+):
+    """List all {feature_name} items"""
+    items = await {feature_name}_use_case.get_all()
+    return [Get{pascal_case}.from_entity(item) for item in items]
+
+
+@router.post("", response_model=Get{pascal_case}, status_code=status.HTTP_201_CREATED)
+async def create_{feature_name}(
+    data: Create{pascal_case},
+    current_user: User = Depends(get_current_active_user),
+    {feature_name}_use_case: {pascal_case}UseCase = Depends(get_{feature_name}_use_case)
+):
+    """Create new {feature_name}"""
+    try:
+        item = await {feature_name}_use_case.create(data)
+        return Get{pascal_case}.from_entity(item)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/{{item_id}}", response_model=Get{pascal_case})
+async def get_{feature_name}(
+    item_id: str,
+    current_user: User = Depends(get_current_active_user),
+    {feature_name}_use_case: {pascal_case}UseCase = Depends(get_{feature_name}_use_case)
+):
+    """Get {feature_name} by ID"""
+    item = await {feature_name}_use_case.get_by_id(item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="{pascal_case} not found")
+    return Get{pascal_case}.from_entity(item)
+
+
+@router.put("/{{item_id}}", response_model=Get{pascal_case})
+async def update_{feature_name}(
+    item_id: str,
+    data: Update{pascal_case},
+    current_user: User = Depends(get_current_active_user),
+    {feature_name}_use_case: {pascal_case}UseCase = Depends(get_{feature_name}_use_case)
+):
+    """Update {feature_name}"""
+    item = await {feature_name}_use_case.update(item_id, data)
+    if not item:
+        raise HTTPException(status_code=404, detail="{pascal_case} not found")
+    return Get{pascal_case}.from_entity(item)
+
+
+@router.delete("/{{item_id}}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_{feature_name}(
+    item_id: str,
+    current_user: User = Depends(get_current_active_user),
+    {feature_name}_use_case: {pascal_case}UseCase = Depends(get_{feature_name}_use_case)
+):
+    """Delete {feature_name}"""
+    success = await {feature_name}_use_case.delete(item_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="{pascal_case} not found")
+'''
+
+    (module_path / "router.py").write_text(content)
+
+
+def create_model_file(base_path: Path, feature_name: str):
+    """Create model file"""
+    pascal_case = "".join(word.capitalize() for word in feature_name.split("_"))
+    models_path = base_path / "api_app_new" / "models"
+    model_file = models_path / f"{feature_name}_model.py"
+
+    content = f'''"""
+{pascal_case} Beanie document model
+"""
+from beanie import Document
+from pydantic import Field
+from typing import Optional
+from datetime import datetime
+
+
+class {pascal_case}(Document):
+    """
+    {pascal_case} document model for MongoDB collection
+    """
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+    status: str = Field(default="active")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
+
+    class Settings:
+        name = "{feature_name}"  # Collection name in MongoDB
+        indexes = [
+            "name",
+            "status",
+            "created_at"
+        ]
+
+    def __str__(self) -> str:
+        return f"{pascal_case}(name={{self.name}}, status={{self.status}})"
+'''
+
+    model_file.write_text(content)
+    return model_file
+
+
+def print_success_message(feature_name: str, module_path: Path, model_file: Path):
+    """Print success message with next steps"""
+    pascal_case = "".join(word.capitalize() for word in feature_name.split("_"))
+
+    print(f"✅ Successfully created '{feature_name}' module!")
+    print(f"📁 Module path: {module_path}")
+    print(f"📄 Model file: {model_file}")
+    print()
+    print("🔧 Next steps:")
+    print(
+        f"1. Update api_app_new/infrastructure/database.py to include {pascal_case} model"
+    )
+    print("2. Review and customize the generated files as needed")
+    print("3. The router will be auto-discovered and included in the API")
+    print()
+    print("📝 Generated files:")
+    print(f"   - {module_path}/__init__.py")
+    print(f"   - {module_path}/schemas.py")
+    print(f"   - {module_path}/repository.py")
+    print(f"   - {module_path}/use_case.py")
+    print(f"   - {module_path}/router.py")
+    print(f"   - {model_file}")
+
+
+def print_help():
+    """Print help message"""
+    print("🚀 FastAPI Module Generator")
+    print("=" * 50)
+    print()
+    print("DESCRIPTION:")
+    print("    Create a new FastAPI module following Clean Architecture patterns")
+    print()
+    print("USAGE:")
+    print("    python scripts/create-module")
+    print("    ./scripts/create-module")
+    print()
+    print("OPTIONS:")
+    print("    -h, --help    Show this help message")
+    print()
+    print("INTERACTIVE MODE:")
+    print("    The script will prompt you to enter:")
+    print("    - Feature name (e.g., 'products', 'orders', 'user_profiles')")
+    print("    - Confirmation to create the module")
+    print()
+    print("GENERATED FILES:")
+    print("    api_app_new/modules/{feature}/")
+    print("    ├── __init__.py")
+    print("    ├── schemas.py      # Pydantic schemas (DTOs)")
+    print("    ├── repository.py   # Data access layer")
+    print("    ├── use_case.py     # Business logic layer")
+    print("    └── router.py       # API endpoints")
+    print("    api_app_new/models/{feature}_model.py  # Beanie document model")
+    print()
+    print("REQUIREMENTS:")
+    print("    - Run from project root directory")
+    print("    - Directory must contain 'api_app_new' folder")
+    print()
+
+
+def main():
+    """Main CLI function"""
+    # Check for help flag
+    if len(sys.argv) > 1 and sys.argv[1] in ["--help", "-h", "help"]:
+        print_help()
+        sys.exit(0)
+
+    print("🚀 FastAPI Module Generator")
+    print("=" * 50)
+
+    # Get current directory
+    current_dir = Path.cwd()
+
+    # Check if we're in the right directory
+    if not (current_dir / "api_app_new").exists():
+        print("❌ Error: This script must be run from the project root directory")
+        print("   Make sure you're in the directory containing 'api_app_new' folder")
+        sys.exit(1)
+
+    # Get feature name from user
+    while True:
+        feature_name = (
+            input(
+                "\n📝 Enter feature name (e.g., 'products', 'orders', 'user_profiles'): "
+            )
+            .strip()
+            .lower()
+        )
+
+        if not feature_name:
+            print("❌ Feature name cannot be empty")
+            continue
+
+        if not validate_feature_name(feature_name):
+            print(
+                "❌ Invalid feature name. Use lowercase letters, numbers, and underscores only."
+            )
+            print("   Examples: 'products', 'user_profiles', 'order_items'")
+            continue
+
+        # Check if module already exists
+        module_path = current_dir / "api_app_new" / "modules" / feature_name
+        if module_path.exists():
+            print(f"❌ Module '{feature_name}' already exists at {module_path}")
+            continue
+
+        break
+
+    print(f"\n📋 Creating module: {feature_name}")
+    print(f"📁 Location: api_app_new/modules/{feature_name}")
+
+    # Confirm creation
+    confirm = input(f"\n❓ Create '{feature_name}' module? (y/N): ").strip().lower()
+    if confirm not in ["y", "yes"]:
+        print("❌ Module creation cancelled")
+        sys.exit(0)
+
+    try:
+        # Create module structure
+        print("\n🔨 Creating module structure...")
+        module_path = create_directory_structure(current_dir, feature_name)
+
+        # Create files
+        print("📝 Creating __init__.py...")
+        create_init_file(module_path)
+
+        print("📝 Creating schemas.py...")
+        create_schemas_file(module_path, feature_name)
+
+        print("📝 Creating repository.py...")
+        create_repository_file(module_path, feature_name)
+
+        print("📝 Creating use_case.py...")
+        create_use_case_file(module_path, feature_name)
+
+        print("📝 Creating router.py...")
+        create_router_file(module_path, feature_name)
+
+        print("📝 Creating model file...")
+        model_file = create_model_file(current_dir, feature_name)
+
+        # Success message
+        print_success_message(feature_name, module_path, model_file)
+
+    except Exception as e:
+        print(f"❌ Error creating module: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
