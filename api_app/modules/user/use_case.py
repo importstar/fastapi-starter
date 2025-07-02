@@ -7,6 +7,8 @@ from typing import Optional
 from fastapi_pagination import Page
 from werkzeug.security import generate_password_hash
 from fastapi import Depends
+from beanie.operators import And, Or
+from beanie.odm.operators.find.evaluation import RegEx
 
 from .model import User
 from .repository import UserRepository, get_user_repository
@@ -60,7 +62,7 @@ class UserUseCase(BaseUseCase[User, UserRepository, UserResponse]):
         """Authenticate user - business logic"""
         from werkzeug.security import check_password_hash
 
-        # Find user
+        # Find user (use repository directly for business logic)
         user = await self.repository.find_by_username(username)
         if not user:
             return None
@@ -157,26 +159,14 @@ class UserUseCase(BaseUseCase[User, UserRepository, UserResponse]):
         query: str,
         role: Optional[str] = None,
         is_active: Optional[bool] = None,
-    ) -> Page[User]:
+    ) -> Page[UserResponse]:
         """Search users with business logic"""
-        from beanie.operators import And, Or
-
-        # Business validation
-        if len(query.strip()) < 2:
-            raise BusinessLogicError("Search query must be at least 2 characters")
-
-        # Build query filters
         filters = []
-
-        # Search in username, email, or full_name
+        # Search in username, email, or name
         search_filter = Or(
-            User.username.regex(query, "i"),
-            User.email.regex(query, "i"),
-            (
-                User.full_name.regex(query, "i")
-                if hasattr(User, "full_name")
-                else User.username.regex(query, "i")
-            ),
+            RegEx(User.username, query, options="i"),
+            RegEx(User.email, query, options="i"),
+            RegEx(User.name, query, options="i"),  # ใช้ name แทน full_name
         )
         filters.append(search_filter)
 
@@ -190,21 +180,42 @@ class UserUseCase(BaseUseCase[User, UserRepository, UserResponse]):
         # Combine filters
         combined_filters = And(*filters) if len(filters) > 1 else filters[0]
 
-        return await self.repository.find_many(
+        # ใช้ repository โดยตรงแล้ว convert เป็น response
+        documents_page = await self.repository.find_many(
             filters=combined_filters, sort=[("created_at", -1)]
         )
 
-    async def get_user_by_id_as_response(self, user_id: str) -> Optional[UserResponse]:
-        """Get user by ID as UserResponse schema"""
-        user = await self.get_by_id(user_id)
-        if user:
-            return UserResponse.model_validate(user.model_dump())
-        return None
+        # Convert เป็น Page[UserResponse]
+        return self.convert_page_to_response_schema(documents_page, UserResponse)
 
-    async def register_user_as_response(self, user_data: CreateUser) -> UserResponse:
-        """Register user and return as UserResponse"""
-        user = await self.register_user(user_data)
-        return UserResponse.model_validate(user.model_dump())
+    async def update_user(self, user_id: str, data) -> Optional[UserResponse]:
+        """Update user and return UserResponse with business logic validation"""
+        # ตรวจสอบว่า user มีอยู่จริงไหม
+        existing_user = await self.repository.find_by_id(user_id)
+        if not existing_user:
+            return None
+
+        # ตรวจสอบ username uniqueness หากมีการอัปเดต
+        update_data = data.model_dump(exclude_none=True)
+        if "username" in update_data:
+            # ตรวจสอบว่า username ใหม่ซ้ำกับคนอื่นไหม (ยกเว้นตัวเอง)
+            existing_with_username = await self.repository.find_one({
+                "username": update_data["username"].lower().strip(),
+                "_id": {"$ne": existing_user.id}
+            })
+            if existing_with_username:
+                raise DuplicatedError("Username already exists")
+
+        # อัปเดต password หากมี
+        if "password" in update_data:
+            password = update_data.pop("password")  # เอาออกจาก update_data
+            # Hash password และเพิ่มเข้าไปใน update_data
+            from werkzeug.security import generate_password_hash
+            update_data["hashed_password"] = generate_password_hash(password)
+            update_data["password_changed_at"] = datetime.now(timezone.utc)
+
+        # อัปเดตข้อมูลอื่นๆ ผ่าน base method (จะ return UserResponse)
+        return await self.update(user_id, update_data)
 
 
 # Dependency providers

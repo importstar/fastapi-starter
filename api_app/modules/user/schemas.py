@@ -87,6 +87,9 @@ class CreateUser(BaseModel):
 
 
 class GetUser(BaseModel):
+    search: Optional[str] = Field(
+        default=None, description="Search in username, email, or name"
+    )
     username: Optional[str] = Field(
         default=None, description="Filter by username", max_length=50
     )
@@ -99,4 +102,52 @@ class GetUser(BaseModel):
     )
 
 
+class UpdateUser(BaseModel):
+    """Schema for updating user data - all fields optional"""
+
+    username: Optional[str] = Field(
+        default=None, min_length=1, max_length=50, description="Username of the user"
+    )
+    name: Optional[str] = Field(
+        default=None, min_length=1, max_length=100, description="Name of the user"
+    )
+    email: Optional[str] = Field(
+        default=None, max_length=255, description="Email address of the user"
+    )
+    role: Optional[UserRole] = Field(
+        default=None, description="Role assigned to the user"
+    )
+    is_active: Optional[bool] = Field(
+        default=None, description="Indicates if the user is active"
+    )
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v):
+        if v is not None and len(v) < 3:
+            raise ValidationError("Username must be at least 3 characters long")
+        return v
+
+
 class UserResponse(BaseSchema, BaseUser): ...
+
+
+class UpdateUserPassword(BaseModel):
+    """Schema for updating user password"""
+
+    old_password: str = Field(
+        ..., min_length=8, max_length=128, description="Current user password"
+    )
+    new_password: str = Field(
+        ..., min_length=8, max_length=128, description="New user password"
+    )
+    confirm_new_password: str = Field(
+        ..., min_length=8, max_length=128, description="Confirm new user password"
+    )
+
+    @model_validator(mode="after")
+    def validate_passwords_match(self):
+        """Check that new_password and confirm_new_password match"""
+        if self.new_password != self.confirm_new_password:
+            raise ValidationError("New passwords do not match")
+        return self

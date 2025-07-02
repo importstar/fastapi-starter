@@ -8,10 +8,10 @@ from fastapi_pagination import Page, Params
 from api_app.core.exceptions import BusinessLogicError, DuplicatedError, ValidationError
 
 from .use_case import get_user_use_case, UserUseCase
-from .schemas import CreateUser, GetUser, UserResponse
+from .schemas import CreateUser, GetUser, UpdateUser, UserResponse
 
 router = APIRouter(
-    prefix="/v1/user",
+    prefix="/v1/users",
     tags=["User"],
 )
 
@@ -22,13 +22,24 @@ async def get_user_list(
 ):
     """
     Get a list of users.
-    This endpoint retrieves paginated list of users with filtering.
+    This endpoint retrieves paginated list of users with filtering and search.
     """
-    # Convert GetUser to filters dict
-    filters = params.model_dump(exclude_none=True)
+    try:
+        # ถ้ามี search parameter ใช้ search_users method
+        if params.search:
+            return await use_case.search_users(
+                query=params.search,
+                role=params.role.value if params.role else None,
+                is_active=params.is_active,
+            )
 
-    # ✅ ใช้ base get_list method ที่ return Page[UserResponse] เสมอ
-    return await use_case.get_list(filters=filters if filters else None, sort=[("created_at", -1)])
+        # ถ้าไม่มี search ใช้ get_list method ปกติ
+        filters = params.model_dump(exclude_none=True, exclude={"search"})
+        return await use_case.get_list(
+            filters=filters if filters else None, sort=[("created_at", -1)]
+        )
+    except (BusinessLogicError, ValidationError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post(
@@ -44,8 +55,8 @@ async def register_user(
     This endpoint handles user registration with business logic validation.
     """
     try:
-        # ✅ ใช้ method ใหม่ที่ return UserResponse
-        return await use_case.register_user_as_response(user_data)
+        # ✅ ใช้ base create method ที่ return UserResponse
+        return await use_case.create(user_data)
     except (DuplicatedError, BusinessLogicError, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -58,8 +69,7 @@ async def get_user_by_id(
     Get user by ID.
     This endpoint retrieves a user by their unique identifier.
     """
-    # ✅ ใช้ method ใหม่ที่ return UserResponse
-    user_response = await use_case.get_user_by_id_as_response(user_id)
+    user_response = await use_case.get_by_id(user_id)
     if not user_response:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
@@ -67,11 +77,23 @@ async def get_user_by_id(
     return user_response
 
 
-# TODO: Implement patch endpoint
-# @router.patch("/{user_id}", response_model=UserResponse)
-# async def update_user(
-#    user_id: str,
-#    user_data: dict,
-#    use_case: UserUseCase = Depends(get_user_use_case)
-# ):
-#    pass
+@router.patch("/{user_id}", response_model=UserResponse)
+async def update_user(
+    user_id: str,
+    data: UpdateUser,
+    use_case: UserUseCase = Depends(get_user_use_case),
+):
+    """
+    Update user by ID.
+    This endpoint allows partial updates to user information.
+    """
+    try:
+        # ใช้ method ที่มี business logic validation
+        user_response = await use_case.update_user(user_id, data)
+        if not user_response:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+        return user_response
+    except (DuplicatedError, BusinessLogicError, ValidationError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

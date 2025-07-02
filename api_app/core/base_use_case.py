@@ -9,7 +9,7 @@ from fastapi_pagination import Page
 from pydantic import BaseModel
 
 from .base_repository import BaseRepository
-from .exceptions import ValidationError, BusinessLogicError
+from .exceptions import BusinessLogicError
 
 
 T = TypeVar("T", bound=Document)
@@ -25,24 +25,25 @@ class BaseUseCase(ABC, Generic[T, R, S]):
         self.response_schema = response_schema
 
     # CRUD Operations
-    async def create(self, data: Union[BaseModel, Dict[str, Any]]) -> T:
-        """Create a new entity"""
+    async def create(self, data: Union[BaseModel, Dict[str, Any]]) -> S:
+        """Create a new entity and return as response schema"""
         try:
             # Convert schema to dict if needed
             create_data = data.model_dump() if isinstance(data, BaseModel) else data
             entity = await self.repository.create(create_data)
-            return entity
+            return self.convert_to_response_schema(entity, self.response_schema)
         except Exception as e:
             raise BusinessLogicError(f"Creation failed: {str(e)}")
 
-    async def get_by_id(self, entity_id: str, **kwargs) -> Optional[T]:
-        """Get entity by ID
+    async def get_by_id(self, entity_id: str, **kwargs) -> Optional[S]:
+        """Get entity by ID and return as response schema
 
         Args:
             entity_id: The ID of the entity to retrieve
             **kwargs: Additional parameters to pass to the repository (e.g., fetch_links=True)
         """
-        return await self.repository.find_by_id(entity_id, **kwargs)
+        entity = await self.repository.find_by_id(entity_id, **kwargs)
+        return self.convert_to_response_schema(entity, self.response_schema)
 
     async def get_list(
         self,
@@ -70,8 +71,8 @@ class BaseUseCase(ABC, Generic[T, R, S]):
 
     async def update(
         self, entity_id: str, data: Union[BaseModel, Dict[str, Any]]
-    ) -> Optional[T]:
-        """Update entity"""
+    ) -> Optional[S]:
+        """Update entity and return as response schema"""
         existing = await self.repository.find_by_id(entity_id)
         if not existing:
             return None
@@ -80,7 +81,7 @@ class BaseUseCase(ABC, Generic[T, R, S]):
             # Convert schema to dict if needed
             update_data = data.model_dump() if isinstance(data, BaseModel) else data
             updated = await self.repository.update(entity_id, update_data)
-            return updated
+            return self.convert_to_response_schema(updated, self.response_schema)
         except Exception as e:
             raise BusinessLogicError(f"Update failed: {str(e)}")
 
@@ -105,14 +106,6 @@ class BaseUseCase(ABC, Generic[T, R, S]):
         return await self.repository.exists(filters)
 
     # Utility methods
-    def _raise_validation_error(self, message: str, field: Optional[str] = None):
-        """Raise validation error"""
-        raise ValidationError(message, field=field)
-
-    def _raise_business_error(self, message: str, code: Optional[str] = None):
-        """Raise business logic error"""
-        raise BusinessLogicError(message, code=code)
-
     def convert_to_response_schema(
         self, model: Optional[T], schema_class: Type[S]
     ) -> Optional[S]:
