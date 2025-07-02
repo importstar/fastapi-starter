@@ -19,19 +19,14 @@ def get_template_env() -> Environment:
     """Get Jinja2 template environment"""
     template_dir = Path(__file__).parent / "templates"
     return Environment(
-        loader=FileSystemLoader(template_dir),
-        trim_blocks=True,
-        lstrip_blocks=True
+        loader=FileSystemLoader(template_dir), trim_blocks=True, lstrip_blocks=True
     )
 
 
 def get_template_context(feature_name: str) -> dict:
     """Get template context variables"""
     pascal_case = "".join(word.capitalize() for word in feature_name.split("_"))
-    return {
-        "feature_name": feature_name,
-        "pascal_case": pascal_case
-    }
+    return {"feature_name": feature_name, "pascal_case": pascal_case}
 
 
 def validate_feature_name(feature_name: str) -> bool:
@@ -57,19 +52,19 @@ def render_template_to_file(template_name: str, output_path: Path, context: dict
 def create_module_files(module_path: Path, feature_name: str):
     """Create all module files using templates"""
     context = get_template_context(feature_name)
-    
+
     # Create __init__.py
     render_template_to_file("__init__.py.j2", module_path / "__init__.py", context)
-    
+
     # Create schemas.py
     render_template_to_file("schemas.py.j2", module_path / "schemas.py", context)
-    
+
     # Create repository.py
     render_template_to_file("repository.py.j2", module_path / "repository.py", context)
-    
+
     # Create use_case.py
     render_template_to_file("use_case.py.j2", module_path / "use_case.py", context)
-    
+
     # Create router.py
     render_template_to_file("router.py.j2", module_path / "router.py", context)
 
@@ -79,7 +74,7 @@ def create_model_file(base_path: Path, feature_name: str) -> Path:
     context = get_template_context(feature_name)
     models_path = base_path / "api_app" / "models"
     model_file = models_path / f"{feature_name}_model.py"
-    
+
     render_template_to_file("model.py.j2", model_file, context)
     return model_file
 

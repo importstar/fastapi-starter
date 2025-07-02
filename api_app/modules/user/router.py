@@ -25,18 +25,11 @@ async def get_user_list(
     This endpoint retrieves paginated list of users with filtering and search.
     """
     try:
-        # ถ้ามี search parameter ใช้ search_users method
-        if params.search:
-            return await use_case.search_users(
-                query=params.search,
-                role=params.role.value if params.role else None,
-                is_active=params.is_active,
-            )
-
-        # ถ้าไม่มี search ใช้ get_list method ปกติ
-        filters = params.model_dump(exclude_none=True, exclude={"search"})
-        return await use_case.get_list(
-            filters=filters if filters else None, sort=[("created_at", -1)]
+        # ใช้ search_users method เพื่อรองรับทั้ง search และ filtering
+        return await use_case.search_users(
+            query=params.search,
+            role=params.role.value if params.role else None,
+            is_active=params.is_active,
         )
     except (BusinessLogicError, ValidationError) as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

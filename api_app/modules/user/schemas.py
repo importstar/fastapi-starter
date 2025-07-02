@@ -90,12 +90,6 @@ class GetUser(BaseModel):
     search: Optional[str] = Field(
         default=None, description="Search in username, email, or name"
     )
-    username: Optional[str] = Field(
-        default=None, description="Filter by username", max_length=50
-    )
-    email: Optional[str] = Field(
-        default=None, description="Filter by email", max_length=255
-    )
     role: Optional[UserRole] = Field(default=None, description="Filter by user role")
     is_active: Optional[bool] = Field(
         default=None, description="Filter by active status"
