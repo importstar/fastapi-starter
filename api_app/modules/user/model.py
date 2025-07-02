@@ -2,33 +2,29 @@
 User Beanie document model
 """
 
-from beanie import Document
-from pydantic import Field
-from typing import Optional
-from datetime import datetime, timezone
+from beanie import Document, Indexed
+from pydantic import Field, field_validator
+from typing import Annotated, Optional
+from datetime import UTC, datetime
+from .schemas import BaseUser
+from ...core.base_schemas import TimestampMixin
 
 
-class User(Document):
+class User(BaseUser, TimestampMixin, Document):
     """
     User document model for MongoDB collection
     """
 
-    username: str = Field(..., min_length=1, max_length=50, unique=True)
-    name: str = Field(..., min_length=1, max_length=100)
+    username: Annotated[str, Indexed(unique=True)]
     hashed_password: str
-    email: Optional[str] = Field(None, max_length=100, unique=True)
-    is_active: bool = Field(default=True, description="Indicates if the user is active")
-    role: str = Field(..., description="List of roles assigned to the user")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: Optional[datetime] = None
 
-    class Settings:
-        name = "users"  # Collection name in MongoDB
-        # TODO: Add your indexes here
-        # indexes = [
-        #     "field_name",
-        #     "created_at"
-        # ]
+    @field_validator("username")
+    @classmethod
+    def normalize_username(cls, v: str) -> str:
+        """Normalize username to lowercase for case-insensitive uniqueness"""
+        return v.lower().strip() if v else v
 
     def __str__(self) -> str:
         return f"User(id={self.id})"
@@ -50,3 +46,6 @@ class User(Document):
         from werkzeug.security import check_password_hash
 
         return check_password_hash(self.hashed_password, password)
+
+    class Settings:
+        name = "users"

@@ -2,7 +2,7 @@
 Base use case pattern implementation
 """
 
-from typing import TypeVar, Optional, Dict, Any, Generic, Union
+from typing import TypeVar, Optional, Dict, Any, Generic, Union, Type
 from abc import ABC
 from beanie import Document
 from fastapi_pagination import Page
@@ -17,11 +17,12 @@ R = TypeVar("R", bound=BaseRepository)
 S = TypeVar("S", bound=BaseModel)  # Schema type
 
 
-class BaseUseCase(ABC, Generic[T, R]):
+class BaseUseCase(ABC, Generic[T, R, S]):
     """Simple base use case for business logic"""
 
-    def __init__(self, repository: R):
+    def __init__(self, repository: R, response_schema: Type[S]):
         self.repository = repository
+        self.response_schema = response_schema
 
     # CRUD Operations
     async def create(self, data: Union[BaseModel, Dict[str, Any]]) -> T:
@@ -34,17 +35,36 @@ class BaseUseCase(ABC, Generic[T, R]):
         except Exception as e:
             raise BusinessLogicError(f"Creation failed: {str(e)}")
 
-    async def get_by_id(self, entity_id: str) -> Optional[T]:
-        """Get entity by ID"""
-        return await self.repository.find_by_id(entity_id)
+    async def get_by_id(self, entity_id: str, **kwargs) -> Optional[T]:
+        """Get entity by ID
 
-    async def get_all(
-        self, filters: Optional[Dict[str, Any]] = None, skip: int = 0, limit: int = 100
-    ) -> Page[T]:
-        """Get all entities"""
-        if filters:
-            return await self.repository.find_many(filters, skip, limit)
-        return await self.repository.find_all(skip, limit)
+        Args:
+            entity_id: The ID of the entity to retrieve
+            **kwargs: Additional parameters to pass to the repository (e.g., fetch_links=True)
+        """
+        return await self.repository.find_by_id(entity_id, **kwargs)
+
+    async def get_list(
+        self,
+        filters: Optional[Dict[str, Any]] = None,
+        skip: int = 0,
+        limit: int = 100,
+        **kwargs,
+    ) -> Page[S]:
+        """Get all entities with pagination using Beanie's integration with fastapi_pagination
+        Always returns Page[ResponseSchema] instead of Page[Document]
+
+        Args:
+            filters: Optional filters to apply
+            skip: Number of records to skip
+            limit: Maximum number of records to return
+            **kwargs: Additional parameters to pass to the repository (e.g., fetch_links=True)
+        """
+        # Get paginated documents from repository
+        documents_page = await self.repository.find_many(filters, skip, limit, **kwargs)
+        
+        # Convert to response schema page
+        return self.convert_page_to_response_schema(documents_page, self.response_schema)
 
     async def update(
         self, entity_id: str, data: Union[BaseModel, Dict[str, Any]]
@@ -90,3 +110,23 @@ class BaseUseCase(ABC, Generic[T, R]):
     def _raise_business_error(self, message: str, code: Optional[str] = None):
         """Raise business logic error"""
         raise BusinessLogicError(message, code=code)
+
+    def convert_to_response_schema(
+        self, model: Optional[T], schema_class: Type[S]
+    ) -> Optional[S]:
+        """Convert model to response schema"""
+        if model is None:
+            return None
+        return schema_class.model_validate(model.model_dump())
+
+    def convert_page_to_response_schema(
+        self, page: Page[T], schema_class: Type[S]
+    ) -> Page[S]:
+        """Convert Page[Model] to Page[ResponseSchema]"""
+        response_items = [
+            schema_class.model_validate(item.model_dump()) for item in page.items
+        ]
+
+        return Page.create(
+            items=response_items, total=page.total, page=page.page, size=page.size
+        )

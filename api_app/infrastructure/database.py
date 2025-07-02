@@ -16,51 +16,6 @@ class BeanieClient:
         self.database = None
         self.settings = None
 
-    def _gather_documents(self) -> Sequence[Type[DocumentType]]:
-        """Returns a list of all MongoDB document models defined in `models` module."""
-
-        documents = []
-        models_module_name = "api_app.models"
-
-        try:
-            # Import the models package
-            models_package = importlib.import_module(models_module_name)
-
-            # Get all modules in the models package
-            for finder, module_name, ispkg in pkgutil.iter_modules(
-                models_package.__path__, models_package.__name__ + "."
-            ):
-                if not ispkg:  # Only process module files, not sub-packages
-                    try:
-                        # Import each module
-                        module = importlib.import_module(module_name)
-
-                        # Get all classes from the module
-                        for name, obj in getmembers(module, isclass):
-                            # Check if it's a Beanie Document and not the base Document class
-                            if (
-                                issubclass(obj, beanie.Document)
-                                and obj.__name__ != "Document"
-                                and obj.__module__ == module_name
-                            ):  # Ensure it's defined in this module
-                                documents.append(obj)
-                                logger.info(
-                                    f"Found Document model: {obj.__name__} in {module_name}"
-                                )
-
-                    except Exception as e:
-                        logger.warning(f"Could not import module {module_name}: {e}")
-                        continue
-
-        except Exception as e:
-            logger.error(f"Could not import models package {models_module_name}: {e}")
-            return []
-
-        if not documents:
-            logger.warning("No Document models found in models package")
-
-        return documents
-
     async def init_beanie(self, settings):
         """Initialize Beanie with MongoDB connection"""
         try:
@@ -100,6 +55,50 @@ class BeanieClient:
         except Exception as e:
             logger.error(f"Beanie initialization failed: {e}")
             raise
+
+    def _gather_documents(self) -> Sequence[Type[beanie.Document]]:
+        """
+        Dynamically gather all Beanie Document models from the modules
+        """
+        documents = []
+        
+        # Import the main modules package
+        try:
+            import api_app.modules
+            modules_package = api_app.modules
+        except ImportError:
+            logger.warning("Could not import api_app.modules package")
+            return documents
+
+        # Walk through all modules in the modules package
+        for module_info in pkgutil.iter_modules(modules_package.__path__, f"{modules_package.__name__}."):
+            module_name = module_info.name
+            logger.debug(f"Scanning module: {module_name}")
+            
+            try:
+                # Try to import the model submodule
+                model_module_name = f"{module_name}.model"
+                model_module = importlib.import_module(model_module_name)
+                
+                # Get all classes from the model module
+                for name, obj in getmembers(model_module, isclass):
+                    # Check if it's a Beanie Document (but not the base Document class)
+                    if (issubclass(obj, beanie.Document) and 
+                        obj is not beanie.Document and
+                        obj.__module__ == model_module_name):
+                        
+                        logger.debug(f"Found Document model: {name} in {model_module_name}")
+                        documents.append(obj)
+                        
+            except ImportError as e:
+                # Some modules might not have a model.py file, that's okay
+                logger.debug(f"No model module found for {module_name}: {e}")
+                continue
+            except Exception as e:
+                logger.warning(f"Error scanning module {module_name}: {e}")
+                continue
+        
+        return documents
 
     async def close(self):
         """Close MongoDB connection"""

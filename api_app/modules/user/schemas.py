@@ -3,9 +3,11 @@ User module schemas (DTOs)
 """
 
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
 from datetime import datetime, timezone
+
+from api_app.core.exceptions import ValidationError
 
 from ...core.base_schemas import BaseSchema
 
@@ -22,7 +24,10 @@ class BaseUser(BaseModel):
     """Base schema with common fields for user"""
 
     username: str = Field(
-        ..., min_length=1, max_length=50, description="Username of the user"
+        ...,
+        min_length=1,
+        max_length=50,
+        description="Username of the user",
     )
     name: str = Field(..., min_length=1, max_length=100, description="Name of the user")
     email: Optional[str] = Field(
@@ -52,15 +57,36 @@ class CreateUser(BaseModel):
     password: str = Field(
         ..., min_length=8, max_length=128, description="User password"
     )
-    role: str = Field(
-        default=UserRole.USER.value, description="Role assigned to the user"
-    )
     confirm_password: str = Field(
         ..., min_length=8, max_length=128, description="Confirm user password"
     )
+    role: str = Field(
+        default=UserRole.USER.value, description="Role assigned to the user"
+    )
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v):
+        if len(v) < 3:
+            raise ValidationError("Username must be at least 3 characters long")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValidationError("Password must be at least 8 characters long")
+        return v
+
+    @model_validator(mode="after")
+    def validate_passwords_match(self):
+        """Check that password and confirm_password match"""
+        if self.password != self.confirm_password:
+            raise ValidationError("Passwords do not match")
+        return self
 
 
-class UserParams(BaseSchema):
+class GetUser(BaseSchema):
     username: Optional[str] = Field(
         default=None, description="Filter by username", max_length=50
     )
@@ -73,5 +99,4 @@ class UserParams(BaseSchema):
     )
 
 
-class UserResponse(BaseSchema, BaseUser):
-    name: str = Field(description="Full name of the user", alias="fullname")
+class UserResponse(BaseSchema, BaseUser): ...
