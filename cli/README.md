@@ -1,4 +1,4 @@
-# Sang CLI - FastAPI Beanie Starter CLI Tools
+# Forge CLI - FastAPI Beanie Starter CLI Tools
 
 เครื่องมือ Command Line Interface สำหรับจัดการโปรเจกต์ FastAPI Beanie Starter
 
@@ -8,10 +8,10 @@ CLI นี้ติดตั้งมาพร้อมกับโปรเจ�
 
 ```bash
 # ใช้งาน CLI ผ่าน poetry script
-poetry run sang
+poetry run forge
 
 # หรือหลังจาก activate virtual environment
-sang
+forge
 ```
 
 ## 📋 คำสั่งที่มีให้ใช้
@@ -22,43 +22,43 @@ sang
 
 ```bash
 # สร้าง module ใหม่แบบ interactive
-poetry run sang module
+poetry run forge module
 
 # สร้าง module โดยระบุชื่อ
-poetry run sang module create products
+poetry run forge module create products
 
 # สร้างแบบ force overwrite (เขียนทับไฟล์เดิม)
-poetry run sang module create products --force
+poetry run forge module create products --force
 
 # ดูว่าจะสร้างไฟล์อะไรบ้าง (Dry run - ไม่สร้างไฟล์จริง)
-poetry run sang module create products --dry-run
+poetry run forge module create products --dry-run
 
 # ดู modules ที่มีอยู่
-poetry run sang module list
+poetry run forge module list
 
 # ดู help สำหรับ module commands
-poetry run sang module --help
+poetry run forge module --help
 ```
 
 ### ตัวอย่างการใช้งาน
 
 ```bash
 # 1. สร้าง products module
-poetry run sang module create products
+poetry run forge module create products
 
 # 2. สร้าง orders module แบบ force
-poetry run sang module create orders --force
+poetry run forge module create orders --force
 
 # 3. ดู modules ทั้งหมด
-poetry run sang module list
+poetry run forge module list
 
 # 4. ดูว่า posts module จะสร้างไฟล์อะไรบ้าง (ไม่สร้างจริง)
-poetry run sang module create posts --dry-run
+poetry run forge module create posts --dry-run
 ```
 
 ## 📁 ไฟล์ที่ CLI จะสร้างให้
 
-เมื่อสร้าง module ใหม่ด้วยคำสั่ง `sang module create <module_name>` ระบบจะสร้างไฟล์เหล่านี้:
+เมื่อสร้าง module ใหม่ด้วยคำสั่ง `forge module create <module_name>` ระบบจะสร้างไฟล์เหล่านี้:
 
 ### Module Structure
 
@@ -98,13 +98,13 @@ Router ที่สร้างขึ้นจะถูกค้นหาแล�
 
 ```bash
 # ดู help หลัก
-poetry run sang --help
+poetry run forge --help
 
 # ดู help สำหรับ module commands
-poetry run sang module --help
+poetry run forge module --help
 
 # ดู version
-poetry run sang --version
+poetry run forge --version
 ```
 
 ## 💡 Tips และ Best Practices
@@ -118,18 +118,18 @@ poetry run sang --version
 
 ### ปัญหาที่พบบ่อย
 
-1. **Command not found: sang**
+1. **Command not found: forge**
 
    ```bash
    # แก้ไข: ใช้ poetry run
-   poetry run sang
+   poetry run forge
    ```
 
 2. **Module already exists**
 
    ```bash
    # แก้ไข: ใช้ --force flag
-   poetry run sang module create products --force
+   poetry run forge module create products --force
    ```
 
 3. **Permission denied**
