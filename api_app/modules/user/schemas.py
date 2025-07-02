@@ -86,7 +86,7 @@ class CreateUser(BaseModel):
         return self
 
 
-class GetUser(BaseSchema):
+class GetUser(BaseModel):
     username: Optional[str] = Field(
         default=None, description="Filter by username", max_length=50
     )
