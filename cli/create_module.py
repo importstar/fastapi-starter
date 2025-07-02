@@ -121,7 +121,7 @@ def print_success_message(feature_name: str, module_path: Path, model_file: Path
 
 
 @app.command()
-def add(
+def create(
     feature_name: Optional[str] = typer.Argument(
         None, help="Feature name (e.g., 'products', 'orders', 'user_profiles')"
     ),

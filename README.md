@@ -17,69 +17,95 @@
 ```
 fastapi-beanie-starter/
 ├── .env                      # ตัวแปรสิ่งแวดล้อม (Database URL, Secret Keys)
+├── .env.sample              # ตัวอย่างไฟล์ Environment Variables
 ├── .gitignore               # ไฟล์ที่ไม่ต้องเก็บใน Git
 ├── pyproject.toml           # การจัดการ Dependencies ด้วย Poetry
+├── poetry.lock              # Lock file สำหรับ Dependencies
+├── poetry.toml              # การตั้งค่า Poetry
 ├── README.md                # คู่มือการใช้งาน (ไฟล์นี้)
 │
-├── api_app/             # โฟลเดอร์หลักของแอปพลิเคชัน
+├── .github/                 # GitHub Configuration
+│   └── instructions/
+│       └── fastapi.instructions.md  # คู่มือการพัฒนา FastAPI
+│
+├── api_app/                 # โฟลเดอร์หลักของแอปพลิเคชัน
+│   ├── __init__.py
 │   ├── main.py              # จุดเริ่มต้นแอปพลิเคชัน
 │   ├── run.py               # Script สำหรับรันเซิร์ฟเวอร์
 │   │
+│   ├── cmd/                 # Command Line Interface Components
+│   │   └── __init__.py
+│   │
 │   ├── core/                # ชั้นธุรกิจและ Components ที่ใช้ร่วมกัน
-│   │   ├── config.py        # การตั้งค่าแอปพลิเคชัน
-│   │   ├── security.py      # JWT, Password Hashing
-│   │   ├── exceptions.py    # Custom Exceptions
-│   │   ├── schemas.py       # Base Pydantic Schemas
-│   │   └── dependencies/    # Shared Dependencies
+│   │   ├── __init__.py
+│   │   ├── base_repository.py  # Base Repository Pattern
+│   │   ├── base_schemas.py     # Base Pydantic Schemas
+│   │   ├── base_use_case.py    # Base Use Case Pattern
+│   │   ├── config.py           # การตั้งค่าแอปพลิเคชัน
+│   │   ├── exceptions.py       # Custom Exceptions
+│   │   ├── http_error.py       # HTTP Error Handling
+│   │   ├── router.py           # Base Router Configuration
+│   │   ├── security.py         # JWT, Password Hashing
+│   │   ├── validation_error.py # Validation Error Handling
 │   │
 │   ├── infrastructure/      # ชั้น Infrastructure และ External Services
+│   │   ├── __init__.py
 │   │   ├── database.py      # การเชื่อมต่อ MongoDB
 │   │   └── gridfs.py        # การจัดเก็บไฟล์
 │   │
-│   ├── models/              # Database Models (Beanie Documents)
-│   │   ├── user_model.py    # โมเดลผู้ใช้
-│   │   ├── auth_model.py    # โมเดล Authentication
-│   │   └── image_model.py   # โมเดลรูปภาพ
-│   │
 │   ├── middlewares/         # FastAPI Middlewares
+│   │   ├── __init__.py
 │   │   ├── base.py          # จัดการ Middlewares ทั้งหมด
 │   │   ├── cors.py          # CORS และการบีบอัด
 │   │   ├── security.py      # กรอง User Agent
 │   │   └── timing.py        # วัดประสิทธิภาพ
 │   │
 │   ├── utils/               # Utility Functions
+│   │   ├── __init__.py
 │   │   ├── logging.py       # การจัดการ Log
 │   │   └── request_logs.py  # Log การ Request
 │   │
 │   └── modules/             # Feature Modules (Clean Architecture)
+│       ├── __init__.py
 │       ├── auth/            # โมดูลการเข้าสู่ระบบ
 │       │   ├── __init__.py
-│       │   ├── schemas.py   # Pydantic Schemas สำหรับ Auth
-│       │   ├── repository.py # การเข้าถึงข้อมูล Auth
-│       │   ├── use_case.py  # Business Logic สำหรับ Auth
-│       │   └── router.py    # API Endpoints สำหรับ Auth
+│       │   └── schemas.py   # Pydantic Schemas สำหรับ Auth
 │       │
-│       ├── user/            # โมดูลจัดการผู้ใช้
+│       ├── examples/        # โมดูลตัวอย่าง (สำหรับการทดสอบ)
+│       │
+│       ├── health/          # โมดูลตรวจสอบสถานะระบบ
 │       │   ├── __init__.py
-│       │   ├── schemas.py   # Pydantic Schemas สำหรับ User
-│       │   ├── repository.py # การเข้าถึงข้อมูล User
-│       │   ├── use_case.py  # Business Logic สำหรับ User
-│       │   └── router.py    # API Endpoints สำหรับ User
+│       │   ├── router.py    # Health Check Endpoints
+│       │   └── schemas.py   # Health Check Schemas
 │       │
-│       └── health/          # โมดูลตรวจสอบสถานะระบบ
+│       └── user/            # โมดูลจัดการผู้ใช้
 │           ├── __init__.py
-│           └── router.py    # Health Check Endpoints
+│           ├── model.py     # User Database Model
+│           ├── repository.py # การเข้าถึงข้อมูล User
+│           ├── router.py     # API Endpoints สำหรับ User
+│           ├── schemas.py    # Pydantic Schemas สำหรับ User
+│           └── use_case.py   # Business Logic สำหรับ User
 │
 ├── cli/                     # CLI Tools สำหรับ Development
 │   ├── __init__.py
 │   ├── main.py              # CLI Entry Point
 │   ├── create_module.py     # Module Generator
-│   └── README.md            # คู่มือ CLI
+│   ├── README.md            # คู่มือ CLI
+│   └── templates/           # Template Files สำหรับ Module Generation
+│       ├── __init__.py.j2
+│       ├── model.py.j2
+│       ├── repository.py.j2
+│       ├── router.py.j2
+│       ├── schemas.py.j2
+│       └── use_case.py.j2
 │
-└── scripts/                 # Development Scripts
-    ├── create-module        # CLI สร้าง Module ใหม่
-    ├── create-example-module # สร้าง Example Module
+├── docs/                    # Documentation
+│   └── repository-usecase-pattern.md # คู่มือ Repository และ Use Case Pattern
+│
+└── scripts/                 # Development Scripts (deprecated - ใช้ CLI แทน)
+    ├── init-admin           # สร้าง Admin User แรก
     ├── run-dev              # รันในโหมด Development
+    ├── run-prod             # รันในโหมด Production
     └── README.md            # คู่มือ Scripts
 ```
 
@@ -90,12 +116,12 @@ fastapi-beanie-starter/
 - **Modules** ขึ้นอยู่กับ **Core** (import จาก `api_app.core.*`)
 - **Core** ไม่ขึ้นอยู่กับ **Modules**
 - **Infrastructure** implement interfaces ที่กำหนดใน **Core**
-- **Models** ใช้ร่วมกันได้ทุกชั้น
+- **Models** อยู่ภายใน module ของตัวเองเพื่อความเป็นระเบียบ
 
 ### 🔄 Dependency Injection
 
 - ใช้ FastAPI's `Depends()` สำหรับ dependencies ทั้งหมด
-- สร้าง dependency providers ใน `core/dependencies/`
+- สร้าง dependency providers ใน `modules/{feature}/dependencies/`
 - Inject use cases, repositories, และ services ผ่าน dependencies
 - ไม่สร้าง object โดยตรงใน routers
 
@@ -106,6 +132,7 @@ fastapi-beanie-starter/
 ```
 modules/{feature}/
 ├── __init__.py
+├── model.py        # Database Model (Beanie Document)
 ├── schemas.py      # Pydantic schemas (DTOs)
 ├── repository.py   # ชั้นการเข้าถึงข้อมูล
 ├── use_case.py     # ชั้น Business Logic
@@ -167,13 +194,14 @@ modules/{feature}/
 4. **รันแอปพลิเคชัน**
 
    ```bash
-   # โหมด Development
-   ./scripts/run-dev
-   # หรือ
+   # โหมด Development (ใหม่ - ใช้ CLI)
+   poetry run forge app run dev
+   
+   # โหมด Production (ใหม่ - ใช้ CLI)
+   poetry run forge app run prod
+   
+   # หรือใช้วิธีเดิม
    poetry run python api_app/run.py
-
-   # โหมด Production
-   ./scripts/run-prod
    ```
 
 5. **เข้าถึง API Documentation**
@@ -186,7 +214,7 @@ modules/{feature}/
 
    ```bash
    # สร้าง products module แบบ interactive
-   poetry run forge module
+   poetry run forge module create
 
    # หรือสร้างโดยระบุชื่อ
    poetry run forge module create products
@@ -198,7 +226,7 @@ modules/{feature}/
    - `modules/products/repository.py` - จัดการการเข้าถึงฐานข้อมูล
    - `modules/products/use_case.py` - ใส่ Business Logic
    - `modules/products/router.py` - สร้าง API Endpoints
-   - `models/product_model.py` - กำหนด Database Model
+   - `modules/products/model.py` - กำหนด Database Model
 
 3. **ระบบจะค้นหา Router อัตโนมัติ** - ไม่ต้องไปแก้ไขไฟล์ main.py
 
@@ -253,7 +281,7 @@ GET /v1/health
 
 ```bash
 # สร้าง module ใหม่ (Interactive mode)
-poetry run forge module
+poetry run forge module create
 
 # สร้าง module โดยระบุชื่อ
 poetry run forge module create products
@@ -283,14 +311,33 @@ poetry run forge module --help
 
 รายละเอียดเพิ่มเติม: [cli/README.md](cli/README.md)
 
-### 🔧 Development Scripts
+### 🔧 CLI Commands (แนะนำ - ใหม่!)
+
+```bash
+# รันในโหมด Development (auto-reload)
+poetry run forge app run dev
+
+# รันในโหมด Production  
+poetry run forge app run prod
+
+# สร้าง Admin User แรก
+poetry run forge admin create
+
+# สร้าง Module ใหม่
+poetry run forge module create products
+
+# ดู Modules ที่มีอยู่
+poetry run forge module list
+
+# ดู Help
+poetry run forge --help
+```
+
+### 🔧 Development Scripts (วิธีเดิม - ยังใช้ได้)
 
 ```bash
 # รันในโหมด Development (auto-reload)
 ./scripts/run-dev
-
-# รันเวอร์ชันใหม่
-./scripts/run-new-dev
 
 # รันในโหมด Production
 ./scripts/run-prod
@@ -298,6 +345,8 @@ poetry run forge module --help
 # สร้าง Admin User แรก
 ./scripts/init-admin
 ```
+
+> 💡 **แนะนำ**: ใช้ CLI commands (`poetry run forge`) แทน scripts เพื่อประสบการณ์ที่ดีกว่าและมี features เพิ่มเติม
 
 ## 📚 คู่มือการพัฒนา
 

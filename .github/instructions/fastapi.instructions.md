@@ -9,31 +9,53 @@ This project follows **Clean Architecture** principles with **Domain-Driven Desi
 ```
 api_app/
 ├── core/                    # Business Logic & Shared Components Layer
-│   ├── dependencies/        # Shared dependencies (auth, validation, etc.)
-│   ├── security.py         # JWT, password hashing
-│   ├── config.py           # App configuration & settings
-│   ├── exceptions.py       # Custom business exceptions
-│   ├── schemas.py          # Base Pydantic schemas
-│   └── base_repository.py  # Base repository pattern
+│   ├── __init__.py
+│   ├── base_repository.py   # Base repository pattern
+│   ├── base_schemas.py      # Base Pydantic schemas
+│   ├── base_use_case.py     # Base use case pattern
+│   ├── config.py            # App configuration & settings
+│   ├── exceptions.py        # Custom business exceptions
+│   ├── http_error.py        # HTTP error handling
+│   ├── router.py            # Base router configuration
+│   ├── security.py          # JWT, password hashing
+│   ├── validation_error.py  # Validation error handling
+│   └── dependencies/        # Shared dependencies (auth, validation, etc.)
+│       ├── __init__.py
+│       └── auth.py          # Authentication dependencies
 ├── infrastructure/          # Infrastructure & External Services Layer
-│   ├── database.py         # MongoDB connection & Beanie setup
-│   └── gridfs.py           # File storage
-├── models/                  # Database Models (Beanie Documents)
-│   ├── user_model.py       # User document
-│   ├── token_model.py      # Token document
-│   └── image_model.py      # Image document
-├── utils/                   # Utility Functions
-│   ├── logging.py          # Logging configuration
-│   └── request_logs.py     # Request logging
+│   ├── __init__.py
+│   ├── database.py          # MongoDB connection & Beanie setup
+│   └── gridfs.py            # File storage
 ├── middlewares/             # FastAPI Middlewares
-│   ├── base.py             # init_all_middlewares function
-│   ├── cors.py             # CORS & compression
-│   ├── security.py         # User agent filtering
-│   └── timing.py           # Performance timing
+│   ├── __init__.py
+│   ├── base.py              # init_all_middlewares function
+│   ├── cors.py              # CORS & compression
+│   ├── security.py          # User agent filtering
+│   └── timing.py            # Performance timing
+├── utils/                   # Utility Functions
+│   ├── __init__.py
+│   ├── logging.py           # Logging configuration
+│   └── request_logs.py      # Request logging
+├── cmd/                     # Command Line Interface Components
+│   └── __init__.py
+├── shares/                  # Shared Resources
 └── modules/                 # Feature Modules (Clean Architecture)
-    ├── auth/               # Authentication module
-    ├── users/              # User management module
-    └── health/             # Health check module
+    ├── __init__.py
+    ├── auth/                # Authentication module
+    │   ├── __init__.py
+    │   └── schemas.py       # Auth schemas
+    ├── user/                # User management module
+    │   ├── __init__.py
+    │   ├── model.py         # User database model
+    │   ├── repository.py    # User data access layer
+    │   ├── router.py        # User API endpoints
+    │   ├── schemas.py       # User schemas
+    │   └── use_case.py      # User business logic
+    ├── health/              # Health check module
+    │   ├── __init__.py
+    │   ├── router.py        # Health check endpoints
+    │   └── schemas.py       # Health check schemas
+    └── examples/            # Example module (for testing)
 ```
 
 ## 🎯 Core Principles
@@ -43,7 +65,7 @@ api_app/
 - **Modules** depend on **Core** (import from `api_app.core.*`)
 - **Core** does NOT depend on **Modules**
 - **Infrastructure** implements interfaces defined in **Core**
-- **Models** are shared across all layers
+- **Models** are now within each module for better organization
 
 ### 2. **Module Structure**
 
@@ -52,6 +74,7 @@ Each feature module MUST follow this exact pattern:
 ```
 modules/{feature}/
 ├── __init__.py
+├── model.py        # Database Model (Beanie Document)
 ├── schemas.py      # Pydantic schemas (DTOs)
 ├── repository.py   # Data access layer
 ├── use_case.py     # Business logic layer (with dependency providers)
@@ -84,7 +107,36 @@ name = 'John Doe'
 message = "Welcome to our API"
 ```
 
-### **1. Use Case Pattern**
+### **1. Model Pattern**
+
+Each module should contain its own model file:
+
+```python
+# modules/{feature}/model.py
+from beanie import Document
+from pydantic import Field
+from typing import Optional
+from datetime import datetime
+
+class {Model}(Document):
+    """Database model for {feature}"""
+    
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+    status: str = Field(default="active")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
+    
+    class Settings:
+        name = "{feature_plural}"  # Collection name in MongoDB
+        indexes = [
+            "name",
+            "status", 
+            "created_at"
+        ]
+```
+
+### **2. Use Case Pattern**
 
 ```python
 # modules/{feature}/use_case.py
@@ -92,7 +144,7 @@ from fastapi import Depends
 from typing import Optional
 
 from api_app.core.base_repository import BaseRepository
-from api_app.models.{feature}_model import {Model}
+from .model import {Model}
 from .repository import {Feature}Repository
 
 class {Feature}UseCase:
@@ -137,12 +189,12 @@ async def get_{feature}_use_case(
     return {Feature}UseCase({feature}_repository=repository)
 ```
 
-### **2. Repository Pattern**
+### **3. Repository Pattern**
 
 ```python
 # modules/{feature}/repository.py
 from api_app.core.base_repository import BaseRepository
-from api_app.models.{feature}_model import {Model}
+from .model import {Model}
 
 class {Feature}Repository(BaseRepository[{Model}]):
     def __init__(self):
@@ -157,7 +209,7 @@ class {Feature}Repository(BaseRepository[{Model}]):
         return await self.model.find({"status": "active"}).to_list()
 ```
 
-### **3. Router Pattern**
+### **4. Router Pattern**
 
 ```python
 # modules/{feature}/router.py
@@ -165,7 +217,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
 from api_app.core.dependencies import get_current_active_user, RoleChecker
-from api_app.models.user_model import User
+from api_app.modules.user.model import User
 from .use_case import get_{feature}_use_case, {Feature}UseCase
 from .schemas import {Schema}Request, {Schema}Response
 
@@ -207,7 +259,7 @@ async def get_{feature}(
     return {Schema}Response.from_entity(item)
 ```
 
-### **4. Cross-Module Dependencies**
+### **5. Cross-Module Dependencies**
 
 When a use case needs to call another module's use case:
 
@@ -215,7 +267,7 @@ When a use case needs to call another module's use case:
 # modules/auth/use_case.py
 from fastapi import Depends
 
-from ..users.use_case import get_user_use_case, UserUseCase
+from ..user.use_case import get_user_use_case, UserUseCase
 from .repository import AuthRepository
 
 class AuthUseCase:
@@ -255,7 +307,7 @@ async def get_auth_use_case(
     )
 ```
 
-### **5. Schemas Pattern**
+### **6. Schemas Pattern**
 
 ```python
 # modules/{feature}/schemas.py
@@ -263,7 +315,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
-from api_app.core.schemas import BaseSchema
+from api_app.core.base_schemas import BaseSchema
 
 class {Schema}Base(BaseModel):
     """Base schema with common fields"""
@@ -294,7 +346,7 @@ class {Schema}Response({Schema}Base, BaseSchema):
         )
 ```
 
-### **6. Pagination Pattern with fastapi_pagination**
+### **7. Pagination Pattern with fastapi_pagination**
 
 This project uses **fastapi_pagination** library with **Beanie pagination** for consistent paginated responses.
 
@@ -304,7 +356,7 @@ from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.beanie import paginate
 
 from api_app.core.base_repository import BaseRepository
-from api_app.models.{feature}_model import {Model}
+from .model import {Model}
 
 class {Feature}Repository(BaseRepository[{Model}]):
     def __init__(self):
@@ -363,7 +415,7 @@ from fastapi import APIRouter, Depends
 from fastapi_pagination import Page, Params
 
 from api_app.core.dependencies import get_current_active_user
-from api_app.models.user_model import User
+from api_app.modules.user.model import User
 from .use_case import get_{feature}_use_case, {Feature}UseCase
 from .schemas import {Schema}Response
 
@@ -481,7 +533,7 @@ async def create_item():
 
    ```python
    # ❌ Bad
-   from api_app.models.user_model import User
+   from api_app.modules.user.model import User
    user = await User.find_one({"email": email})
 
    # ✅ Good
@@ -512,10 +564,10 @@ async def create_item():
 
    ```python
    # ❌ Bad
-   from api_app.modules.users.repository import UserRepository
+   from api_app.modules.user.repository import UserRepository
 
    # ✅ Good - Import use case dependency provider
-   from ..users.use_case import get_user_use_case, UserUseCase
+   from ..user.use_case import get_user_use_case, UserUseCase
    ```
 
 ## 📊 File Naming Conventions
@@ -529,9 +581,41 @@ async def create_item():
 
 ## 🎯 When Creating New Features
 
+### **Option 1: Using CLI Tools (Recommended)**
+
+The project includes a powerful CLI module generator:
+
+```bash
+# Interactive mode - will prompt for module name and features
+poetry run forge module
+
+# Direct creation with module name
+poetry run forge module create {feature_name}
+
+# Force overwrite existing files
+poetry run forge module create {feature_name} --force
+
+# Dry run to see what files will be created
+poetry run forge module create {feature_name} --dry-run
+
+# List existing modules
+poetry run forge module list
+```
+
+The CLI will automatically generate:
+- `modules/{feature}/model.py` - Database model with proper Beanie Document
+- `modules/{feature}/schemas.py` - Request/Response schemas
+- `modules/{feature}/repository.py` - Data access layer with BaseRepository
+- `modules/{feature}/use_case.py` - Business logic with dependency providers
+- `modules/{feature}/router.py` - API endpoints with proper routing
+
+### **Option 2: Manual Creation**
+
+If creating manually:
+
 1. **Create module directory**: `modules/{feature}/`
-2. **Add `__init__.py`** to make it a Python package
-3. **Create all required files**: `schemas.py`, `repository.py`, `use_case.py`, `router.py`
+2. **Add `__init__.py`** to make it a Python package  
+3. **Create all required files**: `model.py`, `schemas.py`, `repository.py`, `use_case.py`, `router.py`
 4. **Follow the exact patterns** shown above
 5. **Export router** with variable name `router`
 6. **Add dependency providers** in `use_case.py` file
