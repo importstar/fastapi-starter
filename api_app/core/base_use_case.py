@@ -62,9 +62,11 @@ class BaseUseCase(ABC, Generic[T, R, S]):
         """
         # Get paginated documents from repository
         documents_page = await self.repository.find_many(filters, skip, limit, **kwargs)
-        
+
         # Convert to response schema page
-        return self.convert_page_to_response_schema(documents_page, self.response_schema)
+        return self.convert_page_to_response_schema(
+            documents_page, self.response_schema
+        )
 
     async def update(
         self, entity_id: str, data: Union[BaseModel, Dict[str, Any]]
@@ -127,6 +129,10 @@ class BaseUseCase(ABC, Generic[T, R, S]):
             schema_class.model_validate(item.model_dump()) for item in page.items
         ]
 
-        return Page.create(
-            items=response_items, total=page.total, page=page.page, size=page.size
+        return Page(
+            items=response_items,
+            total=page.total,
+            page=page.page,
+            size=page.size,
+            pages=page.pages,
         )
