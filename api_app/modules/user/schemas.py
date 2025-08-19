@@ -37,6 +37,9 @@ class BaseUser(BaseModel):
         default=UserRole.USER, description="List of roles assigned to the user"
     )
     is_active: bool = Field(default=True, description="Indicates if the user is active")
+    last_login_date: Optional[datetime] = Field(
+        default=None, description="Last login date of the user"
+    )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="Creation timestamp",

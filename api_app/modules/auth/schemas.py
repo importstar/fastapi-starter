@@ -1,11 +1,54 @@
-class TokenData:
-    """
-    Data model for token payload.
-    This model is used to define the structure of the data contained in the JWT token.
-    """
+import datetime
 
-    sub: str  # Subject (usually user ID)
-    exp: int  # Expiration time (timestamp)
-    iat: int  # Issued at time (timestamp)
-    role: str  # User role
-    is_active: bool  # User active status
+import typing as t
+
+from pydantic import BaseModel, Field
+
+from ...core.base_schemas import BaseSchema
+
+
+
+class Token(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str
+    expires_in: int
+    expires_at: datetime.datetime
+    scope: str
+    issued_at: datetime.datetime
+
+
+class TokenData(BaseModel):
+    user_id: str | None = None
+
+
+class SignIn(BaseSchema):
+    username: str
+    password: str
+
+
+class Payload(BaseSchema):
+    roles: t.List[str]
+
+
+class AccessTokenResponse(BaseSchema):
+    access_token: str
+    access_token_expires: datetime.datetime
+    refresh_token: str
+    refresh_token_expires: datetime.datetime
+
+
+class SignInResponse(AccessTokenResponse):
+    # user_info: LoginUserResponse
+    access_token_expires_in: int
+    ...
+
+
+class RefreshToken(BaseSchema):
+    grant_type: str
+    refresh_token: str
+
+
+class GetAccessTokenResponse(BaseModel):
+    access_token: str
+    token_type: str
