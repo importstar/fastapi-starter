@@ -61,6 +61,7 @@ class Settings(BaseSettings):
     # date
     DATETIME_FORMAT: str = "%Y-%m-%dT%H:%M:%S"
     DATE_FORMAT: str = "%Y-%m-%d"
+    DAILY_TIME_TO_RUN_QUEUE: str = "00:00"
 
     model_config = SettingsConfigDict(
         case_sensitive=True,

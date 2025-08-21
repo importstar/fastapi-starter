@@ -30,6 +30,7 @@ ruff = "^0.9.5"
 
 [tool.poetry.scripts]
 forge = "cli.main:main"
+controller = "api_app.cmd.controller:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
