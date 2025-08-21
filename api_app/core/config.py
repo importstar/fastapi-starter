@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"
 
     DATABASE_URI: str = ""
+    REDIS_URL: str = "redis://localhost:6379/0"
 
     # auth
     SECRET_KEY: str = "secret_key"
