@@ -10,7 +10,7 @@ from pydantic.main import _model_construction
 
 from beanie import Document as BeanieDocument
 
-from api_app.api.core.exceptions import ValidationError
+from apiapp.api.core.exceptions import ValidationError
 
 __all__ = ("AllOptional", "PydanticObjectId", "DeDBRef")
 

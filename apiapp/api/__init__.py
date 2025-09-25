@@ -1,14 +1,17 @@
+import os
+from dotenv import load_dotenv
+
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi_pagination import add_pagination
-from .utils import http_error, validation_error
 from contextlib import asynccontextmanager
-from . import middlewares, routers
-from api_app.models import init_beanie
 from loguru import logger
+
+from apiapp.models import init_beanie
+
+from . import middlewares, routers
 from .core.app_settings import AppSettings, get_app_settings
-from dotenv import load_dotenv
-import os
+from .utils import http_error, validation_error
 
 
 def create_app() -> FastAPI:

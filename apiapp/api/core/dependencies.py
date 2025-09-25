@@ -7,7 +7,7 @@ from pydantic import ValidationError
 
 from loguru import logger
 
-from api_app import models, schemas
+from apiapp import models, schemas
 from . import security
 
 

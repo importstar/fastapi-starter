@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from beanie import Document
 from ..utils.schema import PydanticObjectId
 
-from api_app.api.core.exceptions import DuplicatedError, ValidationError
+from apiapp.api.core.exceptions import DuplicatedError, ValidationError
 
 
 class BaseRepository:

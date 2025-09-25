@@ -6,9 +6,9 @@ from loguru import logger
 from ..core.exceptions import AuthError, NoPermission
 from ..core.security import JWTBearer, reusable_oauth2, decode_jwt
 
-from api_app import models
-from api_app.services.user_service import UserService
-from api_app.schemas.auth_schema import Payload
+from apiapp import models
+from apiapp.services.user_service import UserService
+from apiapp.schemas.auth_schema import Payload
 
 
 def get_current_user(token: t.Annotated[str, Depends(reusable_oauth2)]) -> models.User:

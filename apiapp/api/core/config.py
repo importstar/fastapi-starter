@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     DATABASE_URI_FORMAT: str = (
         "{db_engine}://{user}:{password}@{host}:{port}/{database}"
     )
-    DATABASE_URI: str = ""
+    DATABASE_URI: str = "mongodb://localhost:27017/appdb"
 
     # auth
     SECRET_KEY: str = "secret_key"

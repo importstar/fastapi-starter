@@ -3,8 +3,8 @@ from .user_model import User
 import sys
 from typing import Sequence, Type, TypeVar
 from inspect import getmembers, isclass
-import motor
 import beanie
+from pymongo import AsyncMongoClient
 from loguru import logger
 
 
@@ -32,9 +32,7 @@ class BeanieClient:
     async def init_beanie(self, settings):
         self.settings = settings
         logger.debug(settings.DATABASE_URI)
-        self.client = motor.motor_asyncio.AsyncIOMotorClient(
-            settings.DATABASE_URI, connect=True
-        )
+        self.client = AsyncMongoClient(settings.DATABASE_URI, connect=True)
 
         documents = await gather_documents()
         print("Documents >>>")

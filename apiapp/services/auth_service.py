@@ -2,9 +2,9 @@ import datetime
 import typing as t
 from loguru import logger
 
-from api_app.api.core.config import settings
-from api_app.api.core.exceptions import AuthError
-from api_app.api.core.security import (
+from apiapp.api.core.config import settings
+from apiapp.api.core.exceptions import AuthError
+from apiapp.api.core.security import (
     jwt_handler,
     verify_password,
     decode_jwt,
