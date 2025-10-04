@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import sys
 
-from api_app.infrastructure import database
-from api_app.modules.user import model
-
+from api_app import models
 import datetime
 import asyncio
 
