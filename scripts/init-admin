@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 
-from apiapp import models
+from api_app import models
 import datetime
 import asyncio
 
@@ -15,10 +15,10 @@ async def create_user_admin():
     if len(sys.argv) > 1:
         settings.DATABASE_URI = "mongodb://mongodb/appdb"
 
-    await models.init_beanie(settings)
+    await database.init_beanie(settings)
 
     print("start check admin")
-    user = await models.User.find_one(models.User.username == "admin")
+    user = await model.User.find_one(model.User.username == "admin")
 
     if user:
         print("Found admin user", user)
@@ -26,16 +26,16 @@ async def create_user_admin():
     print("end check admin")
 
     print("start create admin")
-    user = models.User(
+    user = model.User(
         email="admin@example.com",
         username="admin",
-        password="",
-        first_name="admin",
-        last_name="system",
-        roles=["user", "admin"],
-        status="active",
+        hashed_password="",
+        name="admin system",
+        role="admin",
+        is_active=True,
     )
-    await user.set_password("p@ssw0rd")
+    print(user.email)
+    user.set_password("p@ssw0rd")
     await user.save()
     print("finish")
 
