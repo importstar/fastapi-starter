@@ -1,4 +1,4 @@
-from api_app import controllers
+from apiapp import controllers
 
 
 def main():

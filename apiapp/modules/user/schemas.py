@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
 from datetime import datetime, timezone
 
-from api_app.core.exceptions import ValidationError
+from apiapp.core.exceptions import ValidationError
 
 from ...core.base_schemas import BaseSchema
 

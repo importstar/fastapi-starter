@@ -7,7 +7,7 @@ import asyncio
 from pathlib import Path
 import sys
 
-# Add the parent directory to sys.path to import api_app
+# Add the parent directory to sys.path to import apiapp
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 app = typer.Typer(
@@ -17,9 +17,11 @@ app = typer.Typer(
 )
 
 
-async def create_admin_user(database_uri: str, email: str, username: str, password: str):
+async def create_admin_user(
+    database_uri: str, email: str, username: str, password: str
+):
     """Create admin user in the database"""
-    from api_app import models
+    from apiapp import models
 
     class Setting:
         def __init__(self, db_uri: str):
@@ -49,12 +51,16 @@ async def create_admin_user(database_uri: str, email: str, username: str, passwo
     )
     await user.set_password(password)
     await user.save()
-    
-    typer.secho(f"✅ Admin user '{username}' created successfully!", fg=typer.colors.GREEN, bold=True)
+
+    typer.secho(
+        f"✅ Admin user '{username}' created successfully!",
+        fg=typer.colors.GREEN,
+        bold=True,
+    )
     typer.echo(f"   Email: {email}")
     typer.echo(f"   Username: {username}")
     typer.echo(f"   Roles: {user.roles}")
-    
+
     return user
 
 
@@ -63,21 +69,13 @@ def create(
     database_uri: str = typer.Option(
         "mongodb://localhost/appdb",
         "--database-uri",
-        "-d", 
-        help="MongoDB connection URI"
+        "-d",
+        help="MongoDB connection URI",
     ),
     email: str = typer.Option(
-        "admin@example.com",
-        "--email",
-        "-e",
-        help="Admin user email"
+        "admin@example.com", "--email", "-e", help="Admin user email"
     ),
-    username: str = typer.Option(
-        "admin",
-        "--username",
-        "-u",
-        help="Admin username"
-    ),
+    username: str = typer.Option("admin", "--username", "-u", help="Admin username"),
     password: str = typer.Option(
         "p@ssw0rd",
         "--password",
@@ -85,28 +83,26 @@ def create(
         help="Admin password",
         prompt=True,
         hide_input=True,
-        confirmation_prompt=True
+        confirmation_prompt=True,
     ),
     docker: bool = typer.Option(
-        False,
-        "--docker",
-        help="Use docker MongoDB URI (mongodb://mongodb/appdb)"
-    )
+        False, "--docker", help="Use docker MongoDB URI (mongodb://mongodb/appdb)"
+    ),
 ):
     """Create an admin user in the database"""
-    
+
     if docker:
         database_uri = "mongodb://mongodb/appdb"
-    
+
     typer.secho("🔧 Initializing admin user...", fg=typer.colors.CYAN, bold=True)
     typer.echo(f"📍 Database URI: {database_uri}")
     typer.echo(f"📧 Email: {email}")
     typer.echo(f"👤 Username: {username}")
-    
+
     if not typer.confirm("❓ Proceed with admin user creation?"):
         typer.secho("❌ Operation cancelled", fg=typer.colors.RED)
         raise typer.Exit(0)
-    
+
     try:
         asyncio.run(create_admin_user(database_uri, email, username, password))
     except Exception as e:

@@ -29,7 +29,7 @@ Repository เป็นชั้นที่รับผิดชอบการ
 โปรเจกต์นี้มี `BaseRepository` ที่มีฟังก์ชัน CRUD พื้นฐาน:
 
 ```python
-from api_app.core.base_repository import BaseRepository
+from apiapp.core.base_repository import BaseRepository
 from typing import Optional, Dict, Any, List
 from fastapi_pagination import Page
 from beanie.operators import And, Or
@@ -149,8 +149,8 @@ Use Case เป็นชั้นที่รับผิดชอบ Business L
 ### 🔧 BaseUseCase
 
 ```python
-from api_app.core.base_use_case import BaseUseCase
-from api_app.core.exceptions import BusinessLogicError
+from apiapp.core.base_use_case import BaseUseCase
+from apiapp.core.exceptions import BusinessLogicError
 from typing import Optional, Dict, Any
 from fastapi_pagination import Page
 
@@ -326,7 +326,7 @@ async def get_my_profile(
 ```python
 import pytest
 from unittest.mock import AsyncMock
-from api_app.modules.user.repository import UserRepository
+from apiapp.modules.user.repository import UserRepository
 
 @pytest.fixture
 async def user_repository():
@@ -347,8 +347,8 @@ async def test_find_by_email(user_repository):
 ```python
 import pytest
 from unittest.mock import AsyncMock
-from api_app.modules.user.use_case import UserUseCase
-from api_app.core.exceptions import BusinessLogicError
+from apiapp.modules.user.use_case import UserUseCase
+from apiapp.core.exceptions import BusinessLogicError
 
 @pytest.fixture
 def user_use_case():

@@ -23,13 +23,13 @@ python scripts/create-module
 2. **ยืนยันการสร้าง**: กด `y` หรือ `yes` เพื่อยืนยัน
 
 3. **ระบบจะสร้างไฟล์ทั้งหมด**:
-   - `api_app/modules/{feature}/`
+   - `apiapp/modules/{feature}/`
      - `__init__.py`
      - `schemas.py` - Pydantic schemas (DTOs)
      - `repository.py` - Data access layer
      - `use_case.py` - Business logic layer
      - `router.py` - API endpoints
-   - `api_app/models/{feature}_model.py` - Beanie document model
+   - `apiapp/models/{feature}_model.py` - Beanie document model
 
 ## ตัวอย่างการใช้งาน
 
@@ -42,7 +42,7 @@ $ python scripts/create-module
 📝 Enter feature name (e.g., 'products', 'orders', 'user_profiles'): products
 
 📋 Creating module: products
-📁 Location: api_app/modules/products
+📁 Location: apiapp/modules/products
 
 ❓ Create 'products' module? (y/N): y
 
@@ -55,21 +55,21 @@ $ python scripts/create-module
 📝 Creating model file...
 
 ✅ Successfully created 'products' module!
-📁 Module path: /path/to/api_app/modules/products
-📄 Model file: /path/to/api_app/models/products_model.py
+📁 Module path: /path/to/apiapp/modules/products
+📄 Model file: /path/to/apiapp/models/products_model.py
 
 🔧 Next steps:
-1. Update api_app/infrastructure/database.py to include Products model
+1. Update apiapp/infrastructure/database.py to include Products model
 2. Review and customize the generated files as needed
 3. The router will be auto-discovered and included in the API
 
 📝 Generated files:
-   - /path/to/api_app/modules/products/__init__.py
-   - /path/to/api_app/modules/products/schemas.py
-   - /path/to/api_app/modules/products/repository.py
-   - /path/to/api_app/modules/products/use_case.py
-   - /path/to/api_app/modules/products/router.py
-   - /path/to/api_app/models/products_model.py
+   - /path/to/apiapp/modules/products/__init__.py
+   - /path/to/apiapp/modules/products/schemas.py
+   - /path/to/apiapp/modules/products/repository.py
+   - /path/to/apiapp/modules/products/use_case.py
+   - /path/to/apiapp/modules/products/router.py
+   - /path/to/apiapp/models/products_model.py
 ```
 
 ## โครงสร้างที่สร้างขึ้น
@@ -111,7 +111,7 @@ $ python scripts/create-module
 1. **อัพเดต database.py**:
 
    ```python
-   # api_app/infrastructure/database.py
+   # apiapp/infrastructure/database.py
    from ...models.{feature}_model import {Feature}
 
    # เพิ่มใน document_models list
@@ -135,7 +135,7 @@ $ python scripts/create-module
 
 - รันจาก root directory ของโปรเจค
 - Python 3.8+
-- โปรเจคต้องมี `api_app` directory
+- โปรเจคต้องมี `apiapp` directory
 
 ## Error Handling
 

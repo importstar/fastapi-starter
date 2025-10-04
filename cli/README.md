@@ -63,7 +63,7 @@ poetry run forge module create posts --dry-run
 ### Module Structure
 
 ```
-api_app/modules/{module_name}/
+apiapp/modules/{module_name}/
 ├── __init__.py          # Package initialization
 ├── schemas.py           # Pydantic schemas (DTOs) สำหรับ validation
 ├── repository.py        # Data access layer สำหรับเข้าถึง database
@@ -74,7 +74,7 @@ api_app/modules/{module_name}/
 ### Database Model
 
 ```
-api_app/models/
+apiapp/models/
 └── {module_name}_model.py   # Beanie document model สำหรับ database
 ```
 

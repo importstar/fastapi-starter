@@ -5,7 +5,7 @@ User API router with REST endpoints
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_pagination import Page, Params
 
-from api_app.core.exceptions import BusinessLogicError, DuplicatedError, ValidationError
+from apiapp.core.exceptions import BusinessLogicError, DuplicatedError, ValidationError
 
 from .use_case import get_user_use_case, UserUseCase
 from .schemas import CreateUser, GetUser, UpdateUser, UserResponse
@@ -20,8 +20,9 @@ router = APIRouter(
 
 @router.get("/", dependencies=[Depends(Params)], response_model=Page[UserResponse])
 async def get_user_list(
-    use_case: UserUseCase = Depends(get_user_use_case), params: GetUser = Depends(),
-    current_user: dict = Depends(get_current_user)
+    use_case: UserUseCase = Depends(get_user_use_case),
+    params: GetUser = Depends(),
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Get a list of users.
@@ -59,8 +60,9 @@ async def register_user(
 
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user_by_id(
-    user_id: str, use_case: UserUseCase = Depends(get_user_use_case),
-    current_user: dict = Depends(get_current_user)
+    user_id: str,
+    use_case: UserUseCase = Depends(get_user_use_case),
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Get user by ID.
@@ -79,7 +81,7 @@ async def update_user(
     user_id: str,
     data: UpdateUser,
     use_case: UserUseCase = Depends(get_user_use_case),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Update user by ID.

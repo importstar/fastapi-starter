@@ -36,7 +36,7 @@ def validate_feature_name(feature_name: str) -> bool:
 
 def create_directory_structure(base_path: Path, feature_name: str) -> Path:
     """Create the module directory structure"""
-    module_path = base_path / "api_app" / "modules" / feature_name
+    module_path = base_path / "apiapp" / "modules" / feature_name
     module_path.mkdir(parents=True, exist_ok=True)
     return module_path
 
@@ -72,7 +72,7 @@ def create_module_files(module_path: Path, feature_name: str):
 def create_model_file(base_path: Path, feature_name: str) -> Path:
     """Create model file using template"""
     context = get_template_context(feature_name)
-    models_path = base_path / "api_app" / "models"
+    models_path = base_path / "apiapp" / "models"
     model_file = models_path / f"{feature_name}_model.py"
 
     render_template_to_file("model.py.j2", model_file, context)
@@ -94,7 +94,7 @@ def print_success_message(feature_name: str, module_path: Path, model_file: Path
     typer.echo("")
     typer.secho("🔧 Next steps:", fg=typer.colors.YELLOW, bold=True)
     typer.echo(
-        f"1. Update api_app/infrastructure/database.py to include {pascal_case} model"
+        f"1. Update apiapp/infrastructure/database.py to include {pascal_case} model"
     )
     typer.echo(
         "2. Customize the generated skeleton files according to your requirements:"
@@ -144,14 +144,14 @@ def create(
     current_dir = Path.cwd()
 
     # Check if we're in the right directory
-    if not (current_dir / "api_app").exists():
+    if not (current_dir / "apiapp").exists():
         typer.secho(
             "❌ Error: This script must be run from the project root directory",
             fg=typer.colors.RED,
             err=True,
         )
         typer.secho(
-            "   Make sure you're in the directory containing 'api_app' folder",
+            "   Make sure you're in the directory containing 'apiapp' folder",
             fg=typer.colors.RED,
             err=True,
         )
@@ -185,7 +185,7 @@ def create(
         raise typer.Exit(1)
 
     # Check if module already exists
-    module_path = current_dir / "api_app" / "modules" / feature_name
+    module_path = current_dir / "apiapp" / "modules" / feature_name
     if module_path.exists() and not force:
         typer.secho(
             f"❌ Module '{feature_name}' already exists at {module_path}",
@@ -203,7 +203,7 @@ def create(
     typer.secho(
         f"📋 Creating module skeleton: {feature_name}", fg=typer.colors.CYAN, bold=True
     )
-    typer.secho(f"📁 Location: api_app/modules/{feature_name}", fg=typer.colors.BLUE)
+    typer.secho(f"📁 Location: apiapp/modules/{feature_name}", fg=typer.colors.BLUE)
 
     if dry_run:
         typer.secho(
@@ -216,7 +216,7 @@ def create(
         typer.echo(f"   - {module_path}/repository.py")
         typer.echo(f"   - {module_path}/use_case.py")
         typer.echo(f"   - {module_path}/router.py")
-        typer.echo(f"   - api_app/models/{feature_name}_model.py")
+        typer.echo(f"   - apiapp/models/{feature_name}_model.py")
         return
 
     # Confirm creation if not in force mode
@@ -250,7 +250,7 @@ def create(
 def list():
     """List all existing modules in the project."""
     current_dir = Path.cwd()
-    modules_path = current_dir / "api_app" / "modules"
+    modules_path = current_dir / "apiapp" / "modules"
 
     if not modules_path.exists():
         typer.secho("❌ No modules directory found", fg=typer.colors.RED, err=True)

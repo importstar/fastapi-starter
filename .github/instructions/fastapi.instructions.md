@@ -7,7 +7,7 @@ This project follows **Clean Architecture** principles with **Domain-Driven Desi
 ### 🏗️ Architecture Layers
 
 ```
-api_app/
+apiapp/
 ├── core/                    # Business Logic & Shared Components Layer
 │   ├── __init__.py
 │   ├── base_repository.py   # Base repository pattern
@@ -62,7 +62,7 @@ api_app/
 
 ### 1. **Dependency Direction**
 
-- **Modules** depend on **Core** (import from `api_app.core.*`)
+- **Modules** depend on **Core** (import from `apiapp.core.*`)
 - **Core** does NOT depend on **Modules**
 - **Infrastructure** implements interfaces defined in **Core**
 - **Models** are now within each module for better organization
@@ -143,7 +143,7 @@ class {Model}(Document):
 from fastapi import Depends
 from typing import Optional
 
-from api_app.core.base_repository import BaseRepository
+from apiapp.core.base_repository import BaseRepository
 from .model import {Model}
 from .repository import {Feature}Repository
 
@@ -193,7 +193,7 @@ async def get_{feature}_use_case(
 
 ```python
 # modules/{feature}/repository.py
-from api_app.core.base_repository import BaseRepository
+from apiapp.core.base_repository import BaseRepository
 from .model import {Model}
 
 class {Feature}Repository(BaseRepository[{Model}]):
@@ -216,8 +216,8 @@ class {Feature}Repository(BaseRepository[{Model}]):
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
-from api_app.core.dependencies import get_current_active_user, RoleChecker
-from api_app.modules.user.model import User
+from apiapp.core.dependencies import get_current_active_user, RoleChecker
+from apiapp.modules.user.model import User
 from .use_case import get_{feature}_use_case, {Feature}UseCase
 from .schemas import {Schema}Request, {Schema}Response
 
@@ -315,7 +315,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
-from api_app.core.base_schemas import BaseSchema
+from apiapp.core.base_schemas import BaseSchema
 
 class {Schema}Base(BaseModel):
     """Base schema with common fields"""
@@ -355,7 +355,7 @@ This project uses **fastapi_pagination** library with **Beanie pagination** for 
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.beanie import paginate
 
-from api_app.core.base_repository import BaseRepository
+from apiapp.core.base_repository import BaseRepository
 from .model import {Model}
 
 class {Feature}Repository(BaseRepository[{Model}]):
@@ -414,8 +414,8 @@ class {Feature}UseCase:
 from fastapi import APIRouter, Depends
 from fastapi_pagination import Page, Params
 
-from api_app.core.dependencies import get_current_active_user
-from api_app.modules.user.model import User
+from apiapp.core.dependencies import get_current_active_user
+from apiapp.modules.user.model import User
 from .use_case import get_{feature}_use_case, {Feature}UseCase
 from .schemas import {Schema}Response
 
@@ -487,7 +487,7 @@ raise Exception("Something went wrong")
 
 ```python
 # Use shared dependencies from core
-from api_app.core.dependencies import (
+from apiapp.core.dependencies import (
     get_current_active_user,
     RoleChecker
 )
@@ -533,7 +533,7 @@ async def create_item():
 
    ```python
    # ❌ Bad
-   from api_app.modules.user.model import User
+   from apiapp.modules.user.model import User
    user = await User.find_one({"email": email})
 
    # ✅ Good
@@ -564,7 +564,7 @@ async def create_item():
 
    ```python
    # ❌ Bad
-   from api_app.modules.user.repository import UserRepository
+   from apiapp.modules.user.repository import UserRepository
 
    # ✅ Good - Import use case dependency provider
    from ..user.use_case import get_user_use_case, UserUseCase

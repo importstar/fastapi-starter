@@ -28,7 +28,7 @@ fastapi-beanie-starter/
 │   └── instructions/
 │       └── fastapi.instructions.md  # คู่มือการพัฒนา FastAPI
 │
-├── api_app/                 # โฟลเดอร์หลักของแอปพลิเคชัน
+├── apiapp/                 # โฟลเดอร์หลักของแอปพลิเคชัน
 │   ├── __init__.py
 │   ├── main.py              # จุดเริ่มต้นแอปพลิเคชัน
 │   ├── run.py               # Script สำหรับรันเซิร์ฟเวอร์
@@ -113,7 +113,7 @@ fastapi-beanie-starter/
 
 ### 🎯 Clean Architecture
 
-- **Modules** ขึ้นอยู่กับ **Core** (import จาก `api_app.core.*`)
+- **Modules** ขึ้นอยู่กับ **Core** (import จาก `apiapp.core.*`)
 - **Core** ไม่ขึ้นอยู่กับ **Modules**
 - **Infrastructure** implement interfaces ที่กำหนดใน **Core**
 - **Models** อยู่ภายใน module ของตัวเองเพื่อความเป็นระเบียบ
@@ -201,7 +201,7 @@ modules/{feature}/
    poetry run forge app run prod
    
    # หรือใช้วิธีเดิม
-   poetry run python api_app/run.py
+   poetry run python apiapp/run.py
    ```
 
 5. **เข้าถึง API Documentation**
@@ -385,7 +385,7 @@ poetry run forge --help
 
    ```python
    # ❌ ไม่ถูกต้อง
-   from api_app.models.user_model import User
+   from apiapp.models.user_model import User
    user = await User.find_one({"email": email})
 
    # ✅ ถูกต้อง
@@ -417,7 +417,7 @@ poetry run forge --help
 poetry run pytest
 
 # รัน tests พร้อม coverage
-poetry run pytest --cov=api_app
+poetry run pytest --cov=apiapp
 
 # รัน tests ในโหมด watch
 poetry run pytest-watch

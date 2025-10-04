@@ -61,35 +61,42 @@ class BeanieClient:
         Dynamically gather all Beanie Document models from the modules
         """
         documents = []
-        
+
         # Import the main modules package
         try:
-            import api_app.modules
-            modules_package = api_app.modules
+            import apiapp.modules
+
+            modules_package = apiapp.modules
         except ImportError:
-            logger.warning("Could not import api_app.modules package")
+            logger.warning("Could not import apiapp.modules package")
             return documents
 
         # Walk through all modules in the modules package
-        for module_info in pkgutil.iter_modules(modules_package.__path__, f"{modules_package.__name__}."):
+        for module_info in pkgutil.iter_modules(
+            modules_package.__path__, f"{modules_package.__name__}."
+        ):
             module_name = module_info.name
             logger.debug(f"Scanning module: {module_name}")
-            
+
             try:
                 # Try to import the model submodule
                 model_module_name = f"{module_name}.model"
                 model_module = importlib.import_module(model_module_name)
-                
+
                 # Get all classes from the model module
                 for name, obj in getmembers(model_module, isclass):
                     # Check if it's a Beanie Document (but not the base Document class)
-                    if (issubclass(obj, beanie.Document) and 
-                        obj is not beanie.Document and
-                        obj.__module__ == model_module_name):
-                        
-                        logger.debug(f"Found Document model: {name} in {model_module_name}")
+                    if (
+                        issubclass(obj, beanie.Document)
+                        and obj is not beanie.Document
+                        and obj.__module__ == model_module_name
+                    ):
+
+                        logger.debug(
+                            f"Found Document model: {name} in {model_module_name}"
+                        )
                         documents.append(obj)
-                        
+
             except ImportError as e:
                 # Some modules might not have a model.py file, that's okay
                 logger.debug(f"No model module found for {module_name}: {e}")
@@ -97,7 +104,7 @@ class BeanieClient:
             except Exception as e:
                 logger.warning(f"Error scanning module {module_name}: {e}")
                 continue
-        
+
         return documents
 
     async def close(self):

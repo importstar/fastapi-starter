@@ -1,4 +1,4 @@
-from api_app.infrastructure import database
+from apiapp.infrastructure import database
 import logging
 from ..core.config import get_settings
 
@@ -24,5 +24,3 @@ async def init_jobs_context():
 async def example_task(ctx):
     # do something
     return {"message": "Hello World"}
-
-

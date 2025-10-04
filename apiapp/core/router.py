@@ -38,7 +38,7 @@ class Routers:
     def _discover_routers(self) -> List[APIRouter]:
         """Discover all routers from modules/*/router.py"""
         routers = []
-        modules_package_name = "api_app.modules"
+        modules_package_name = "apiapp.modules"
 
         try:
             # Import the modules package
