@@ -1,114 +1,202 @@
 """
-User use case containing business logic
+User use case - business logic and data access
+Simplified pattern using Beanie's built-in methods directly
 """
 
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Dict, Any
+
+from beanie import PydanticObjectId
+from beanie.operators import And, Or
+from beanie.odm.operators.find.evaluation import RegEx
 from fastapi_pagination import Page
+from fastapi_pagination.ext.beanie import paginate
 from werkzeug.security import generate_password_hash
-from fastapi import Depends
 
 from .model import User
-from .repository import UserRepository, get_user_repository
-from .schemas import CreateUser, UpdateUser, UserResponse
-from ...core.base_use_case import BaseUseCase
-from ...core.exceptions import ValidationError, DuplicatedError, BusinessLogicError
+from .schemas import CreateUser, UpdateUser, UserResponse, UserRole
+from ...core.exceptions import DuplicatedError
 
 
-class UserUseCase(BaseUseCase[User, UserRepository, UserResponse]):
-    """Use case for User business operations"""
+class UserUseCase:
+    """
+    User use case handling both business logic and data access.
+    Uses Beanie Document methods directly for simplicity.
+    """
 
-    def __init__(self, repository: UserRepository):
-        super().__init__(repository, UserResponse)
+    # ==================== Create Operations ====================
 
-    async def register_user(self, user_data: CreateUser) -> User:
-        """Register a new user with complete business logic"""
+    async def create(self, data: CreateUser) -> UserResponse:
+        """Register a new user with validation"""
+        # Validate uniqueness
+        await self._validate_unique_username(data.username)
+        if data.email:
+            await self._validate_unique_email(data.email)
 
-        # Business validation: Check username uniqueness
-        existing_user = await self.repository.find_by_username(user_data.username)
-        if existing_user:
-            raise DuplicatedError("Username already exists")
-
-        # Business validation: Check email uniqueness (if provided)
-        if user_data.email:
-            existing_email = await self.repository.find_by_email(user_data.email)
-            if existing_email:
-                raise DuplicatedError("Email already exists")
-
-        # Business logic: Hash password
-        hashed_password = generate_password_hash(user_data.password)
-
-        # Business logic: Set default values and timestamps
-        user_dict = user_data.model_dump(exclude={"password", "confirm_password"})
-        user_dict.update(
-            {
-                "hashed_password": hashed_password,
-                "is_active": True,
-                "role": "user",  # Default role
-                "created_at": datetime.now(timezone.utc),
-                "updated_at": datetime.now(timezone.utc),
-            }
+        # Create user with hashed password
+        user = User(
+            username=data.username,
+            name=data.name,
+            email=data.email,
+            hashed_password=generate_password_hash(data.password),
+            role=UserRole(data.role) if isinstance(data.role, str) else data.role,
+            is_active=True,
+            created_at=datetime.now(timezone.utc),
         )
-        try:
-            user = User(**user_dict)
-            new_user = await self.repository.create(user)
-            return new_user
-        except Exception as e:
-            raise ValidationError(f"Registration failed: {str(e)}")
 
-    async def search_users(
+        await user.insert()
+        return self._to_response(user)
+
+    # ==================== Read Operations ====================
+
+    async def get_by_id(self, user_id: str) -> Optional[UserResponse]:
+        """Get user by ID"""
+        user = await User.get(PydanticObjectId(user_id))
+        return self._to_response(user) if user else None
+
+    async def get_by_username(self, username: str) -> Optional[User]:
+        """Get user by username (returns model for auth)"""
+        return await User.find_one({"username": username.lower().strip()})
+
+    async def get_by_email(self, email: str) -> Optional[User]:
+        """Get user by email"""
+        return await User.find_one({"email": email})
+
+    async def search(
         self,
         query: Optional[str] = None,
         role: Optional[str] = None,
         is_active: Optional[bool] = None,
     ) -> Page[UserResponse]:
-        """Search users with business logic"""
-        # เรียกใช้ repository method ที่จัดการ search logic
-        documents_page = await self.repository.search_users(
-            query=query, role=role, is_active=is_active
-        )
+        """Search users with filters and pagination"""
+        filters = self._build_filters(query, role, is_active)
 
-        # แค่ convert เป็น response schema
-        return self.convert_page_to_response_schema(documents_page, UserResponse)
+        if filters:
+            find_query = User.find(And(*filters) if len(filters) > 1 else filters[0])
+        else:
+            find_query = User.find_all()
 
-    async def update_user(
-        self, user_id: str, data: UpdateUser
-    ) -> Optional[UserResponse]:
-        """Update user and return UserResponse with business logic validation"""
-        # ตรวจสอบว่า user มีอยู่จริงไหม
-        existing_user = await self.repository.find_by_id(user_id)
-        if not existing_user:
+        find_query = find_query.sort("-created_at")
+
+        # Paginate and convert to response
+        page = await paginate(find_query)
+        return self._page_to_response(page)
+
+    # ==================== Update Operations ====================
+
+    async def update(self, user_id: str, data: UpdateUser) -> Optional[UserResponse]:
+        """Update user with validation"""
+        user = await User.get(PydanticObjectId(user_id))
+        if not user:
             return None
 
-        # ตรวจสอบ username uniqueness หากมีการอัปเดต
         update_data = data.model_dump(exclude_none=True)
-        if "username" in update_data:
-            # ตรวจสอบว่า username ใหม่ซ้ำกับคนอื่นไหม (ยกเว้นตัวเอง)
-            existing_with_username = await self.repository.find_one(
-                {
-                    "username": update_data["username"].lower().strip(),
-                    "_id": {"$ne": existing_user.id},
-                }
+
+        # Validate username uniqueness if changing
+        if "username" in update_data and update_data["username"] != user.username:
+            await self._validate_unique_username(
+                update_data["username"], exclude_id=user.id
             )
-            if existing_with_username:
-                raise DuplicatedError("Username already exists")
 
-        # อัปเดต password หากมี
-        if "password" in update_data:
-            password = update_data.pop("password")  # เอาออกจาก update_data
-            # Hash password และเพิ่มเข้าไปใน update_data
-            from werkzeug.security import generate_password_hash
+        # Update fields
+        for key, value in update_data.items():
+            setattr(user, key, value)
 
-            update_data["hashed_password"] = generate_password_hash(password)
-            update_data["password_changed_at"] = datetime.now(timezone.utc)
+        user.updated_at = datetime.now(timezone.utc)
+        await user.save()
 
-        # อัปเดตข้อมูลอื่นๆ ผ่าน base method (จะ return UserResponse)
-        return await self.update(user_id, update_data)
+        return self._to_response(user)
+
+    async def update_password(self, user_id: str, new_password: str) -> bool:
+        """Update user password"""
+        user = await User.get(PydanticObjectId(user_id))
+        if not user:
+            return False
+
+        user.hashed_password = generate_password_hash(new_password)
+        user.updated_at = datetime.now(timezone.utc)
+        await user.save()
+        return True
+
+    # ==================== Delete Operations ====================
+
+    async def delete(self, user_id: str) -> bool:
+        """Delete user by ID"""
+        user = await User.get(PydanticObjectId(user_id))
+        if not user:
+            return False
+
+        await user.delete()
+        return True
+
+    # ==================== Private Helpers ====================
+
+    async def _validate_unique_username(
+        self, username: str, exclude_id: Optional[PydanticObjectId] = None
+    ) -> None:
+        """Validate username is unique"""
+        filters: Dict[str, Any] = {"username": username.lower().strip()}
+        if exclude_id:
+            filters["_id"] = {"$ne": exclude_id}
+
+        existing = await User.find_one(filters)
+        if existing:
+            raise DuplicatedError("Username already exists")
+
+    async def _validate_unique_email(
+        self, email: str, exclude_id: Optional[PydanticObjectId] = None
+    ) -> None:
+        """Validate email is unique"""
+        filters: Dict[str, Any] = {"email": email}
+        if exclude_id:
+            filters["_id"] = {"$ne": exclude_id}
+
+        existing = await User.find_one(filters)
+        if existing:
+            raise DuplicatedError("Email already exists")
+
+    def _build_filters(
+        self,
+        query: Optional[str],
+        role: Optional[str],
+        is_active: Optional[bool],
+    ) -> list:
+        """Build search filters"""
+        filters = []
+
+        if query and query.strip():
+            filters.append(
+                Or(
+                    RegEx(User.username, query, options="i"),
+                    RegEx(User.email, query, options="i"),
+                    RegEx(User.name, query, options="i"),
+                )
+            )
+
+        if role:
+            filters.append(User.role == role)
+
+        if is_active is not None:
+            filters.append(User.is_active == is_active)
+
+        return filters
+
+    def _to_response(self, user: User) -> UserResponse:
+        """Convert User model to UserResponse"""
+        return UserResponse.model_validate(user.model_dump())
+
+    def _page_to_response(self, page: Page[User]) -> Page[UserResponse]:
+        """Convert paginated Users to paginated UserResponse"""
+        return Page(
+            items=[self._to_response(user) for user in page.items],
+            total=page.total,
+            page=page.page,
+            size=page.size,
+            pages=page.pages,
+        )
 
 
-# Dependency providers
-async def get_user_use_case(
-    repository: UserRepository = Depends(get_user_repository),
-) -> UserUseCase:
-    """Get user use case with injected dependencies"""
-    return UserUseCase(repository)
+# Dependency injection
+def get_user_use_case() -> UserUseCase:
+    """Get UserUseCase instance"""
+    return UserUseCase()

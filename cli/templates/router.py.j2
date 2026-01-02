@@ -1,25 +1,65 @@
 """
-{{ pascal_case }} API router with REST endpoints
+{{ pascal_case }} API router - REST endpoints
 """
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_pagination import Page, Params
 
-from .use_case import get_{{ feature_name }}_use_case, {{ pascal_case }}UseCase
-from .schemas import {{ pascal_case }}Request, {{ pascal_case }}Response
+from .service import {{ pascal_case }}Service, get_{{ feature_name }}_service
+from .schemas import Create{{ pascal_case }}, Update{{ pascal_case }}, {{ pascal_case }}Response
 
 
-router = APIRouter(prefix="/v1/{{ feature_name }}", tags=["{{ pascal_case }}"])
+router = APIRouter(prefix="/v1/{{ feature_name }}s", tags=["{{ pascal_case }}"])
 
 
 @router.get("/", dependencies=[Depends(Params)], response_model=Page[{{ pascal_case }}Response])
 async def get_{{ feature_name }}_list(
-    use_case: {{ pascal_case }}UseCase = Depends(get_{{ feature_name }}_use_case),
+    service: {{ pascal_case }}Service = Depends(get_{{ feature_name }}_service),
 ):
-    """
-    Get a list of {{ feature_name }}.
-    This endpoint retrieves paginated list of {{ feature_name }} with filtering.
-    """
-    # ✅ Base get_list method returns Page[{{ pascal_case }}Response] automatically
-    return await use_case.get_list()
+    """Get paginated list of {{ feature_name }}."""
+    return await service.get_list()
 
-# TODO: Add your additional API endpoints here
+
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model={{ pascal_case }}Response)
+async def create_{{ feature_name }}(
+    data: Create{{ pascal_case }},
+    service: {{ pascal_case }}Service = Depends(get_{{ feature_name }}_service),
+):
+    """Create a new {{ feature_name }}."""
+    return await service.create(data)
+
+
+@router.get("/{entity_id}", response_model={{ pascal_case }}Response)
+async def get_{{ feature_name }}(
+    entity_id: str,
+    service: {{ pascal_case }}Service = Depends(get_{{ feature_name }}_service),
+):
+    """Get {{ feature_name }} by ID."""
+    result = await service.get_by_id(entity_id)
+    if not result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{{ pascal_case }} not found")
+    return result
+
+
+@router.patch("/{entity_id}", response_model={{ pascal_case }}Response)
+async def update_{{ feature_name }}(
+    entity_id: str,
+    data: Update{{ pascal_case }},
+    service: {{ pascal_case }}Service = Depends(get_{{ feature_name }}_service),
+):
+    """Update {{ feature_name }} by ID."""
+    result = await service.update(entity_id, data)
+    if not result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{{ pascal_case }} not found")
+    return result
+
+
+@router.delete("/{entity_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_{{ feature_name }}(
+    entity_id: str,
+    service: {{ pascal_case }}Service = Depends(get_{{ feature_name }}_service),
+):
+    """Delete {{ feature_name }} by ID."""
+    deleted = await service.delete(entity_id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="{{ pascal_case }} not found")

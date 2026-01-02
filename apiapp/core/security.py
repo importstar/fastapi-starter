@@ -6,15 +6,14 @@ from jose.exceptions import JWTError
 
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import HTTPException, status, Depends
+from beanie import PydanticObjectId
 
 from .config import settings
 from ..modules.user import model
 from .exceptions import ValidationError
-from ..modules.user.repository import UserRepository, get_user_repository
 
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="/v1/auth/token")
-repository: UserRepository = Depends(get_user_repository)
 ALGORITHM = "HS256"
 # JWT_HEADER = {"alg": ALGORITHM[0]}
 # JWE_HEADER = {"alg": ALGORITHM[1], "enc": "A256CBC-HS512"}
@@ -108,16 +107,15 @@ class JWTHandler:
 
 async def get_current_user(token: str = Depends(reusable_oauth2)) -> model.User:
     try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[ALGORITHM]
-        )
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
     except (jwt.JWTError, ValidationError):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
 
-    user = await repository.find_one(id=payload.get("sub"))
+    user_id = payload.get("sub")
+    user = await model.User.get(PydanticObjectId(user_id))
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user

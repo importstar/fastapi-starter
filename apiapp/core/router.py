@@ -1,96 +1,52 @@
+"""
+Router initialization - auto-discovery from modules
+"""
+
 import importlib
 import pkgutil
-
-# from pathlib import Path
 from typing import List
+
 from fastapi import APIRouter, FastAPI
 from loguru import logger
 
 from ..core.config import Settings
 
 
-class Routers:
-    def __init__(self, app: FastAPI, settings: Settings):
-        self.app = app
-        self.settings = settings
+def _discover_routers() -> List[tuple[str, APIRouter]]:
+    """Discover all routers from modules/*/router.py"""
+    routers = []
+    modules_package_name = "apiapp.modules"
 
-    def _include_router(self, router):
-        self.app.include_router(
-            router, prefix=f"{self.settings.API_PREFIX}", tags=router.tags
-        )
+    try:
+        modules_package = importlib.import_module(modules_package_name)
 
-    def include_routers(self, routers):
-        for router in routers:
-            self._include_router(router)
+        for _, module_name, ispkg in pkgutil.iter_modules(
+            modules_package.__path__, modules_package.__name__ + "."
+        ):
+            if not ispkg:
+                continue
 
-    def discover_and_include_routers(self):
-        """Discover and include all routers from modules/*/router.py"""
-        routers = self._discover_routers()
-        if routers:
-            logger.info(f"Discovered {len(routers)} routers:")
-            for router in routers:
-                module_name = getattr(router, "_module_name", "Unknown")
-                logger.info(f"  - {module_name}")
-            self.include_routers(routers)
-        else:
-            logger.warning("No routers found in modules")
+            try:
+                router_module = importlib.import_module(f"{module_name}.router")
+                if hasattr(router_module, "router"):
+                    router = getattr(router_module, "router")
+                    if isinstance(router, APIRouter):
+                        name = module_name.split(".")[-1]
+                        routers.append((name, router))
+            except ImportError:
+                continue
 
-    def _discover_routers(self) -> List[APIRouter]:
-        """Discover all routers from modules/*/router.py"""
-        routers = []
-        modules_package_name = "apiapp.modules"
+    except Exception as e:
+        logger.error(f"Failed to discover routers: {e}")
 
-        try:
-            # Import the modules package
-            modules_package = importlib.import_module(modules_package_name)
-
-            # Get all modules in the modules package
-            for finder, module_name, ispkg in pkgutil.iter_modules(
-                modules_package.__path__, modules_package.__name__ + "."
-            ):
-                if ispkg:  # Only process sub-packages (feature modules)
-                    try:
-                        # Try to import router from the module
-                        router_module_name = f"{module_name}.router"
-                        router_module = importlib.import_module(router_module_name)
-
-                        # Get the router object
-                        if hasattr(router_module, "router"):
-                            router = getattr(router_module, "router")
-                            if isinstance(router, APIRouter):
-                                # Add module name for logging
-                                router._module_name = module_name.split(".")[-1]
-                                routers.append(router)
-                                logger.debug(f"Found router in {router_module_name}")
-                            else:
-                                logger.warning(
-                                    f"'router' in {router_module_name} is not an APIRouter instance"
-                                )
-                        else:
-                            logger.warning(
-                                f"No 'router' attribute found in {router_module_name}"
-                            )
-
-                    except ImportError as e:
-                        logger.debug(f"No router.py found in {module_name}: {e}")
-                        continue
-                    except Exception as e:
-                        logger.warning(
-                            f"Error importing router from {module_name}: {e}"
-                        )
-                        continue
-
-        except Exception as e:
-            logger.error(
-                f"Could not import modules package {modules_package_name}: {e}"
-            )
-            return []
-
-        return routers
+    return routers
 
 
-def init_routers(app: FastAPI, settings: Settings) -> Routers:
-    """Initialize all routers from modules"""
-    router_manager = Routers(app, settings)
-    router_manager.discover_and_include_routers()
-    return router_manager
+def init_routers(app: FastAPI, settings: Settings) -> None:
+    """Initialize all routers from modules (auto-discovery)"""
+    routers = _discover_routers()
+
+    logger.info(f"Discovered {len(routers)} routers:")
+    for name, router in routers:
+        app.include_router(router, prefix=settings.API_PREFIX)
+        logger.info(f"  - {name}")
