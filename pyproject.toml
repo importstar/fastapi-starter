@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.12,<4.0"
-fastapi = {extras = ["standard"], version = "^0.128.0"}
+fastapi = { extras = ["standard"], version = "^0.128.0" }
 pydantic-settings = "^2.7.1"
 loguru = "^0.7.3"
 pydantic = { extras = ["email"], version = "^2.11.9" }
@@ -20,14 +20,17 @@ beanie = "^1.29.0"
 python-jose = "^3.4.0"
 fastapi-pagination = "^0.15.4"
 bcrypt = "^5.0.0"
+typer = { extras = ["all"], version = "^0.21.0" }
+rich = "^14.2.0"
+questionary = "^2.1.1"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.34.0"
-openapi-python-client = "^0.23.1"
 ruff = "^0.9.5"
 
 [tool.poetry.scripts]
 controller = "apiapp.cmd.controller:main"
+velo = "cli.main:app"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
